@@ -257,7 +257,11 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
   <div id="actionOut" class="hidden">
     <button class="btn primary" onclick="putBackIn()">Put tray back in ✓</button>
-    <button class="btn ghost sm" style="margin-top:9px" onclick="cancelOut()">Cancel — never came out</button>
+    <button class="btn sm" style="margin-top:9px" onclick="addAlarm()">⏰ Set a phone alarm for <span id="alarmAt">—</span></button>
+    <div class="tiny faint center" style="margin-top:7px;line-height:1.5">
+      The timer keeps counting even if you close this app —<br>but the alert only reaches you if you set the alarm.
+    </div>
+    <button class="btn ghost sm" style="margin-top:11px" onclick="cancelOut()">Cancel — never came out</button>
   </div>
 
   <div class="card" style="margin-top:14px">
@@ -1149,6 +1153,43 @@ function deleteNote(id) {
   save(); render();
 }
 
+/* ------------------------- calendar alarm ----------------------------- */
+/* Phones suspend web apps in the background, so the in-app reminder can only
+   fire while the app is open. A calendar event with an alarm is handed to the
+   OS, so it goes off with this app closed — and needs no server to do it.    */
+
+const icsEsc = s => String(s).replace(/([,;\\])/g, '\\$1').replace(/\n/g, '\\n');
+const icsTime = t => new Date(t).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+
+function addAlarm() {
+  const s = openSession();
+  if (!s) { toast('The tray is already back in'); return; }
+  const due = sessionDue(s);
+  if (due <= Date.now()) { toast('That time has already passed — put it back in now'); return; }
+
+  const ics = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Aligner Tracker//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+    'BEGIN:VEVENT',
+    'UID:aligner-' + s.id + '@aligner.local',
+    'DTSTAMP:' + icsTime(Date.now()),
+    'DTSTART:' + icsTime(due),
+    'DTEND:' + icsTime(due + 5 * MIN),
+    'SUMMARY:' + icsEsc('Put your aligner back in'),
+    'DESCRIPTION:' + icsEsc('Tray ' + s.tray + ' — your ' + s.label.toLowerCase() +
+      ' allowance of ' + s.rec + ' minutes is up.'),
+    'BEGIN:VALARM', 'ACTION:DISPLAY', 'TRIGGER:PT0S',
+    'DESCRIPTION:' + icsEsc('Put your aligner back in'), 'END:VALARM',
+    'END:VEVENT', 'END:VCALENDAR'
+  ].join('\r\n');
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+  a.download = 'aligner-back-in-' + timeStr(due).replace(/[^0-9]/g, '') + '.ics';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  toast('Add it to your calendar to get the alert at ' + timeStr(due));
+}
+
 /* --------------------------- notifications ---------------------------- */
 const NOTIF_TAG = 'aligner-due';
 let swReg = null;
@@ -1287,6 +1328,7 @@ function renderToday() {
     const bar = $('heroBar');
     bar.style.width = pct + '%';
     bar.className = over ? 'red' : (pct > 75 ? 'amber' : '');
+    $('alarmAt').textContent = timeStr(due);
     $('heroBarL').textContent = 'Out since ' + timeStr(s.out);
     $('heroBarR').textContent = s.rec + ' min allowance';
     $('actionIn').classList.add('hidden');

@@ -65,8 +65,17 @@ red once you're over.
 - Appointment reminders a day before and an hour before.
 
 Reminders need notification permission (tap **Enable notifications** on the Today screen).
-Phones can suspend background apps, so for very long breaks it's still worth setting a
-normal phone alarm as backup.
+
+**These only fire while the app is open.** Phones suspend web apps in the background, so
+nothing runs once you switch away — no timer can tick and no notification can fire without
+a server pushing it. Two things follow from that:
+
+- **No time is lost.** Wear time is derived from the timestamp of when the tray came out,
+  not from a running counter, so closing the app, force-quitting it, or rebooting makes no
+  difference — reopen and the elapsed time is correct.
+- **For the alert, use ⏰ Set a phone alarm** on the out-of-mouth screen. It builds a
+  calendar event with an alarm at your due time and hands it to the phone's own calendar,
+  which does go off with the app closed.
 
 ### Trays
 - Which tray you're on, out of how many, and how far through the whole set you are.
