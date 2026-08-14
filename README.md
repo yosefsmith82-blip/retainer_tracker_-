@@ -74,9 +74,33 @@ normal phone alarm as backup.
   you started tracking partway through treatment.
 - History of every finished tray with how long it took and how well you wore it.
 
-### Appointments
-Add ortho visits with date, time, location and notes. Upcoming and past are listed
-separately, with reminders before each one.
+### Adding the trays you've already been through
+
+Trays → **Add past trays**. Tell it which tray you're on now, how many days each one lasts,
+and one date — either when you started tray 1, or when you started the tray you're on now,
+whichever you actually remember. It works out all the earlier trays and shows you the full
+list before saving anything.
+
+Individual trays can then be corrected: tap any row in the history to change its number or
+dates, or delete it. **+ Add one tray** adds a single one by hand, for when a tray ran long
+or you swapped early.
+
+Backfilled trays are marked **not tracked** and carry dates only. The app never invents wear
+figures for days before you installed it — those days show as untracked everywhere rather
+than as 24 hours of perfect wear, so your averages and streaks stay truthful.
+
+### Calendar
+A month grid where each day shows how you actually did:
+
+- A green bar for days you hit your goal, amber/red for days you didn't, nothing for days
+  before you started tracking.
+- Coloured dots for appointments, tray changes and notes.
+- Tap any day for the detail: total wear against goal, every out-session with actual vs.
+  allowed time, which tray you were on, plus that day's appointments and notes.
+- Add an appointment straight onto a day from its detail view.
+
+Appointments live on this screen too — add ortho visits with date, time, location and notes.
+Upcoming and past are listed separately, with reminders before each one.
 
 ### Notes
 Free-text notes tagged **General / Pain / Fit / Ask my ortho / Progress**, each stamped
@@ -126,6 +150,11 @@ Plain HTML/CSS/JS, no build step, no dependencies.
 State lives under the `alignerTracker.v1` localStorage key. Wear time is derived, never
 accumulated: every figure is computed by subtracting recorded out-of-mouth intervals from
 elapsed time, so editing or deleting a session recalculates the history correctly.
+
+`trackingSince` is the floor for every wear calculation, and backfilling or hand-editing a
+tray start date deliberately does not move it. Without that floor, a tray dated before
+install would report as fully worn for every untracked day, because no out-sessions exist
+to subtract.
 
 ---
 
