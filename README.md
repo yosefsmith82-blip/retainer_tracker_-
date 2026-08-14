@@ -14,9 +14,11 @@ no server.** Everything is stored on your own device.
 
 This gives you a real app icon, full screen, offline, and reminders.
 
-1. Push to `main` (or run the "Deploy Aligner Tracker to GitHub Pages" workflow by hand).
-   The workflow enables Pages itself, so there's nothing to switch on in Settings.
-   The site lands at `https://yosefsmith82-blip.github.io/retainer_tracker_-/`.
+1. **Settings → Pages → Build and deployment → Source: Deploy from a branch**,
+   branch **main**, folder **/ (root)**, then **Save**.
+   About a minute later the site is live at
+   `https://yosefsmith82-blip.github.io/retainer_tracker_-/`, and every push to `main`
+   republishes it.
 2. Open that URL on your phone, then:
    - **iPhone (Safari):** Share button → **Add to Home Screen**
    - **Android (Chrome):** menu ⋮ → **Install app** / **Add to Home screen**
@@ -145,7 +147,6 @@ Plain HTML/CSS/JS, no build step, no dependencies.
 | `sw.js` | Service worker: offline cache, notification clicks |
 | `manifest.webmanifest` | Install metadata |
 | `icon-*.png` | App icons |
-| `.github/workflows/pages.yml` | Deploys to GitHub Pages |
 
 State lives under the `alignerTracker.v1` localStorage key. Wear time is derived, never
 accumulated: every figure is computed by subtracting recorded out-of-mouth intervals from
