@@ -14,10 +14,10 @@ no server.** Everything is stored on your own device.
 
 This gives you a real app icon, full screen, offline, and reminders.
 
-1. In this repo on GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
-2. Push to `main` (or run the "Deploy Aligner Tracker to GitHub Pages" workflow by hand).
-   You'll get a URL like `https://yosefsmith82-blip.github.io/ysmitty/`.
-3. Open that URL on your phone, then:
+1. Push to `main` (or run the "Deploy Aligner Tracker to GitHub Pages" workflow by hand).
+   The workflow enables Pages itself, so there's nothing to switch on in Settings.
+   The site lands at `https://yosefsmith82-blip.github.io/retainer_tracker_-/`.
+2. Open that URL on your phone, then:
    - **iPhone (Safari):** Share button → **Add to Home Screen**
    - **Android (Chrome):** menu ⋮ → **Install app** / **Add to Home screen**
 
