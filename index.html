@@ -1341,7 +1341,7 @@ function renderToday() {
     const since = lastIn ? now - lastIn : now - from;
     hero.className = 'card hero in';
     $('heroState').textContent = 'In your mouth';
-    $('heroTime').textContent = clockDur(since, since < HOUR);
+    $('heroTime').textContent = clockDur(since, true);
     $('heroSub').textContent = lastIn ? 'Back in since ' + timeStr(lastIn)
       : (from > S.tray.startedAt ? 'Since you started tracking' : 'Since you started tray ' + S.tray.number);
     $('heroBarWrap').classList.add('hidden');
@@ -1352,7 +1352,7 @@ function renderToday() {
   // today's wear
   const d = dayStats(dayStart(now)), goal = goalMs();
   const pct = clamp(d.wear / goal * 100, 0, 100);
-  $('dayWear').textContent = clockDur(d.wear);
+  $('dayWear').textContent = clockDur(d.wear, true);
   $('dayPct').textContent = Math.round(d.wear / goal * 100) + '%';
   $('dayGoalLbl').textContent = S.settings.goalHours + 'h';
   const db = $('dayBar');
