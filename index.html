@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1b1e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Aligner">
+<title>Aligner Tracker</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#0d1b1e; --bg2:#122528; --card:#162e33; --card2:#1c383e;
+  --line:#254a51; --text:#e8f4f2; --dim:#8fb0ae; --faint:#5f8481;
+  --mint:#3ddc97; --mint-d:#1f9c68; --amber:#ffbe55; --red:#ff6b6b;
+  --blue:#63b3ed;
+  --r:16px; --shadow:0 6px 20px rgba(0,0,0,.35);
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text);
+  font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  padding-bottom:calc(78px + var(--safe-b));
+  overscroll-behavior-y:contain;
+}
+h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.02em}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:none;background:none}
+.hidden{display:none!important}
+
+/* ---------- layout ---------- */
+header{
+  position:sticky;top:0;z-index:20;
+  background:rgba(13,27,30,.92);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+  padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 12px;
+  display:flex;align-items:center;gap:10px;
+}
+header .brand{display:flex;align-items:center;gap:9px;flex:1;min-width:0}
+header .logo{width:28px;height:28px;border-radius:9px;background:linear-gradient(140deg,var(--mint),#2a9d8f);
+  display:grid;place-items:center;font-size:15px;flex:none}
+header h1{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hbtn{width:38px;height:38px;border-radius:11px;background:var(--card);border:1px solid var(--line);
+  display:grid;place-items:center;font-size:16px;flex:none}
+main{padding:16px 16px 24px;max-width:640px;margin:0 auto}
+section.view{display:none;animation:fade .18s ease}
+section.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+nav{
+  position:fixed;left:0;right:0;bottom:0;z-index:30;
+  background:rgba(18,37,40,.96);backdrop-filter:blur(12px);
+  border-top:1px solid var(--line);
+  display:flex;padding:8px 4px calc(8px + var(--safe-b));
+}
+nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 2px;color:var(--faint);font-size:10.5px;font-weight:600;letter-spacing:.01em;border-radius:12px}
+nav button .ic{font-size:19px;line-height:1}
+nav button.active{color:var(--mint)}
+
+/* ---------- cards ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card.tight{padding:13px 14px}
+.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:12px;font-weight:700}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.muted{color:var(--dim)}
+.faint{color:var(--faint)}
+.small{font-size:13px}
+.tiny{font-size:11.5px}
+.mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.center{text-align:center}
+.stack>*+*{margin-top:10px}
+
+/* ---------- status hero ---------- */
+.hero{text-align:center;padding:22px 16px 18px;position:relative;overflow:hidden}
+.hero.in{background:linear-gradient(165deg,#17423a,#16302f)}
+.hero.out{background:linear-gradient(165deg,#4a3520,#2f2a20)}
+.hero.over{background:linear-gradient(165deg,#4d2323,#331f1f)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:750;letter-spacing:.09em;
+  text-transform:uppercase;padding:6px 13px;border-radius:99px;background:rgba(0,0,0,.28)}
+.hero.in .pill{color:var(--mint)} .hero.out .pill{color:var(--amber)} .hero.over .pill{color:var(--red)}
+.dot{width:7px;height:7px;border-radius:99px;background:currentColor;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.bigtime{font-size:52px;font-weight:750;letter-spacing:-.035em;margin:12px 0 2px;line-height:1}
+.hero .sub{font-size:13.5px;color:var(--dim);min-height:20px}
+.hero .warn{color:var(--red);font-weight:650}
+
+.btn{display:block;width:100%;padding:15px;border-radius:14px;font-size:16px;font-weight:700;
+  background:var(--card2);color:var(--text);border:1px solid var(--line);transition:transform .1s,filter .15s}
+.btn:active{transform:scale(.985);filter:brightness(1.12)}
+.btn.primary{background:linear-gradient(140deg,var(--mint),var(--mint-d));color:#06251b;border:none}
+.btn.warn{background:linear-gradient(140deg,#ffc46b,#e8912f);color:#331f00;border:none}
+.btn.danger{background:#3a1f22;border-color:#6b3238;color:#ffb3b3}
+.btn.sm{padding:10px;font-size:14px;border-radius:11px}
+.btn.ghost{background:transparent}
+.btnrow{display:flex;gap:9px}.btnrow>*{flex:1}
+
+/* ---------- chips ---------- */
+.chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:9px}
+.chip{padding:12px 8px;border-radius:13px;background:var(--card2);border:1px solid var(--line);
+  text-align:center;transition:transform .1s}
+.chip:active{transform:scale(.96)}
+.chip .e{font-size:21px;display:block;margin-bottom:3px}
+.chip .l{font-size:12.5px;font-weight:650;display:block}
+.chip .m{font-size:11px;color:var(--faint);display:block;margin-top:1px}
+
+/* ---------- bars ---------- */
+.bar{height:9px;border-radius:99px;background:#0c2024;overflow:hidden;position:relative}
+.bar>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--mint-d),var(--mint));
+  transition:width .4s ease}
+.bar>i.amber{background:linear-gradient(90deg,#c9821f,var(--amber))}
+.bar>i.red{background:linear-gradient(90deg,#c53d3d,var(--red))}
+.bar .goal{position:absolute;top:-3px;bottom:-3px;width:2px;background:rgba(255,255,255,.55);border-radius:2px}
+
+/* ---------- stat grid ---------- */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{background:var(--card2);border-radius:13px;padding:12px}
+.stat .v{font-size:22px;font-weight:750;letter-spacing:-.02em}
+.stat .k{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;font-weight:650;margin-top:2px}
+
+/* ---------- list items ---------- */
+.item{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
+.item:last-child{border-bottom:none;padding-bottom:0}
+.item:first-child{padding-top:0}
+.item .ico{width:34px;height:34px;border-radius:11px;background:var(--card2);display:grid;place-items:center;font-size:16px;flex:none}
+.item .body{flex:1;min-width:0}
+.item .t{font-weight:620;font-size:14.5px}
+.item .s{font-size:12.5px;color:var(--faint);margin-top:2px}
+.item .x{color:var(--faint);font-size:17px;padding:2px 4px;flex:none}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:99px;
+  background:rgba(61,220,151,.14);color:var(--mint);letter-spacing:.03em}
+.tag.red{background:rgba(255,107,107,.15);color:var(--red)}
+.tag.amber{background:rgba(255,190,85,.15);color:var(--amber)}
+.tag.blue{background:rgba(99,179,237,.15);color:var(--blue)}
+.tag.grey{background:rgba(255,255,255,.07);color:var(--dim)}
+.empty{text-align:center;color:var(--faint);font-size:13.5px;padding:22px 10px}
+.empty .e{font-size:30px;display:block;margin-bottom:8px;opacity:.75}
+
+/* ---------- forms ---------- */
+label.f{display:block;margin-bottom:11px}
+label.f>span{display:block;font-size:12px;color:var(--dim);font-weight:650;margin-bottom:5px;
+  text-transform:uppercase;letter-spacing:.05em}
+input,select,textarea{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:11px;
+  padding:12px;outline:none;-webkit-appearance:none;appearance:none}
+input:focus,select,textarea:focus{border-color:var(--mint)}
+textarea{min-height:88px;resize:vertical;font-family:inherit}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238fb0ae' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 13px center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--line)}
+.switch:last-child{border-bottom:none}
+.switch .lbl{font-size:14.5px;font-weight:600}
+.switch .desc{font-size:12px;color:var(--faint);margin-top:2px}
+.tog{width:50px;height:29px;border-radius:99px;background:#0c2024;border:1px solid var(--line);position:relative;flex:none;transition:background .2s}
+.tog::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:99px;background:var(--dim);transition:.2s}
+.tog.on{background:var(--mint-d);border-color:var(--mint)}
+.tog.on::after{left:24px;background:#fff}
+
+/* ---------- chart ---------- */
+.chart{display:flex;align-items:flex-end;gap:5px;height:130px;padding-top:6px;position:relative}
+.chart .goalline{position:absolute;left:0;right:0;border-top:1px dashed rgba(255,255,255,.22);font-size:0}
+.chart .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px;height:100%}
+.chart .b{width:100%;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,var(--mint),var(--mint-d));min-height:2px}
+.chart .b.miss{background:linear-gradient(180deg,#5d7b78,#3f5a58)}
+.chart .lb{font-size:9.5px;color:var(--faint);font-weight:600}
+
+/* ---------- sheet ---------- */
+.sheet{position:fixed;inset:0;z-index:60;display:none}
+.sheet.open{display:block}
+.sheet .scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);animation:fade .2s}
+.sheet .panel{position:absolute;left:0;right:0;bottom:0;background:var(--bg2);border-radius:22px 22px 0 0;
+  border-top:1px solid var(--line);padding:8px 16px calc(20px + var(--safe-b));max-height:88vh;overflow:auto;
+  animation:up .22s cubic-bezier(.2,.8,.3,1)}
+@keyframes up{from{transform:translateY(100%)}to{transform:none}}
+.sheet .grab{width:38px;height:4px;border-radius:99px;background:var(--line);margin:6px auto 14px}
+.sheet h2{font-size:19px;margin-bottom:14px}
+.toast{position:fixed;left:50%;bottom:calc(94px + var(--safe-b));transform:translateX(-50%) translateY(12px);
+  background:var(--card2);border:1px solid var(--line);color:var(--text);padding:11px 17px;border-radius:99px;
+  font-size:13.5px;font-weight:600;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.25s;z-index:80;
+  max-width:88vw;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.banner{background:rgba(99,179,237,.1);border:1px solid rgba(99,179,237,.3);border-radius:13px;padding:12px 14px;
+  font-size:13px;margin-bottom:14px;display:flex;gap:10px;align-items:flex-start}
+.banner .e{font-size:17px;flex:none}
+.banner b{color:var(--blue)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="logo">🦷</div>
+    <h1 id="hTitle">Aligner Tracker</h1>
+  </div>
+  <button class="hbtn" id="installBtn" title="Install app" style="display:none">⬇</button>
+  <button class="hbtn" onclick="go('settings')" title="Settings">⚙️</button>
+</header>
+
+<main>
+
+<!-- ============ TODAY ============ -->
+<section class="view active" id="v-today">
+  <div id="permBanner" class="banner hidden">
+    <span class="e">🔔</span>
+    <div><b>Turn on reminders</b> so you get a nudge when it's time to put your tray back in.
+    <button class="btn sm primary" style="margin-top:9px" onclick="askNotify()">Enable notifications</button></div>
+  </div>
+
+  <div class="card hero" id="hero">
+    <div class="pill" id="heroPill"><span class="dot"></span><span id="heroState">In</span></div>
+    <div class="bigtime mono" id="heroTime">0:00</div>
+    <div class="sub" id="heroSub">&nbsp;</div>
+    <div id="heroBarWrap" class="hidden" style="margin:14px 0 2px">
+      <div class="bar"><i id="heroBar" style="width:0%"></i></div>
+      <div class="row tiny faint" style="margin-top:5px">
+        <span id="heroBarL">out</span><span id="heroBarR"></span>
+      </div>
+    </div>
+  </div>
+
+  <div id="actionIn">
+    <button class="btn warn" onclick="openOutSheet()">Take tray out</button>
+  </div>
+  <div id="actionOut" class="hidden">
+    <button class="btn primary" onclick="putBackIn()">Put tray back in ✓</button>
+    <button class="btn ghost sm" style="margin-top:9px" onclick="cancelOut()">Cancel — never came out</button>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h2>Today's wear</h2>
+    <div class="row" style="margin-bottom:9px">
+      <div class="bigtime mono" style="font-size:34px" id="dayWear">0:00</div>
+      <div class="center">
+        <div class="mono" style="font-size:15px;font-weight:700" id="dayPct">0%</div>
+        <div class="tiny faint">of <span id="dayGoalLbl">22h</span> goal</div>
+      </div>
+    </div>
+    <div class="bar"><i id="dayBar" style="width:0%"></i><span class="goal" id="dayGoalMark"></span></div>
+    <div class="row tiny faint" style="margin-top:7px">
+      <span id="dayOutLbl">Out 0m today</span>
+      <span id="dayLeftLbl"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Out sessions today</h2>
+    <div id="todaySessions"></div>
+  </div>
+
+  <div class="card tight">
+    <div class="row">
+      <div>
+        <div class="small" style="font-weight:650">Tray <span id="miniTray">1</span> · day <span id="miniDay">1</span> of <span id="miniDays">7</span></div>
+        <div class="tiny faint" id="miniDue">—</div>
+      </div>
+      <button class="btn sm" style="width:auto;padding:9px 14px" onclick="go('trays')">Trays →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TRAYS ============ -->
+<section class="view" id="v-trays">
+  <div class="card">
+    <div class="row" style="align-items:flex-start">
+      <div>
+        <div class="tiny faint" style="text-transform:uppercase;letter-spacing:.07em;font-weight:700">Current tray</div>
+        <div style="font-size:42px;font-weight:750;letter-spacing:-.03em;line-height:1.1" class="mono">
+          <span id="trayNum">1</span><span class="faint" style="font-size:20px"> / <span id="trayTotal">20</span></span>
+        </div>
+      </div>
+      <div class="center">
+        <div class="mono" style="font-size:20px;font-weight:700" id="trayPctTxt">0%</div>
+        <div class="tiny faint">through set</div>
+      </div>
+    </div>
+    <div class="bar" style="margin:13px 0 7px"><i id="trayProg" style="width:0%"></i></div>
+    <div class="row tiny faint"><span id="trayStarted">—</span><span id="trayLeft">—</span></div>
+  </div>
+
+  <div class="card">
+    <h2>This tray</h2>
+    <div class="stats">
+      <div class="stat"><div class="v mono" id="tsDay">1</div><div class="k">Day of <span id="tsDays">7</span></div></div>
+      <div class="stat"><div class="v mono" id="tsAvg">—</div><div class="k">Avg wear / day</div></div>
+      <div class="stat"><div class="v mono" id="tsWorn">0h</div><div class="k">Total worn</div></div>
+      <div class="stat"><div class="v mono" id="tsOut">0h</div><div class="k">Total out</div></div>
+    </div>
+    <div class="small" style="margin-top:13px" id="trayDueMsg"></div>
+    <div class="btnrow" style="margin-top:12px">
+      <button class="btn sm" onclick="prevTray()">← Back a tray</button>
+      <button class="btn sm primary" onclick="nextTray()">Next tray →</button>
+    </div>
+    <button class="btn sm ghost" style="margin-top:9px" onclick="openTrayEdit()">Edit tray number / start date</button>
+  </div>
+
+  <div class="card">
+    <h2>Tray history</h2>
+    <div id="trayHistory"></div>
+  </div>
+</section>
+
+<!-- ============ APPOINTMENTS ============ -->
+<section class="view" id="v-appts">
+  <button class="btn primary" onclick="openApptSheet()">+ Add appointment</button>
+  <div class="card" style="margin-top:14px">
+    <h2>Upcoming</h2>
+    <div id="apptUpcoming"></div>
+  </div>
+  <div class="card">
+    <h2>Past</h2>
+    <div id="apptPast"></div>
+  </div>
+</section>
+
+<!-- ============ NOTES ============ -->
+<section class="view" id="v-notes">
+  <div class="card">
+    <h2>New note</h2>
+    <textarea id="noteText" placeholder="Tray 4 feels tight on the left… / attachment popped off / asked ortho about…"></textarea>
+    <div class="btnrow" style="margin-top:10px">
+      <select id="noteTag">
+        <option value="general">General</option>
+        <option value="pain">Pain / soreness</option>
+        <option value="fit">Fit issue</option>
+        <option value="question">Ask my ortho</option>
+        <option value="progress">Progress</option>
+      </select>
+      <button class="btn sm primary" onclick="addNote()">Save note</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Notes</h2>
+    <div id="notesList"></div>
+  </div>
+</section>
+
+<!-- ============ STATS ============ -->
+<section class="view" id="v-stats">
+  <div class="card">
+    <h2>Last 14 days</h2>
+    <div class="chart" id="chart"></div>
+    <div class="row tiny faint" style="margin-top:9px">
+      <span>Dashed line = <span id="chartGoal">22h</span> goal</span>
+      <span id="chartAvg"></span>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Wear</h2>
+    <div class="stats">
+      <div class="stat"><div class="v mono" id="stAvg7">—</div><div class="k">Avg / day (7d)</div></div>
+      <div class="stat"><div class="v mono" id="stStreak">0</div><div class="k">Goal streak</div></div>
+      <div class="stat"><div class="v mono" id="stBest">—</div><div class="k">Best day</div></div>
+      <div class="stat"><div class="v mono" id="stHit">0%</div><div class="k">Days goal hit</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h2>Time out of mouth</h2>
+    <div class="stats">
+      <div class="stat"><div class="v mono" id="stSess">0</div><div class="k">Sessions (7d)</div></div>
+      <div class="stat"><div class="v mono" id="stAvgOut">—</div><div class="k">Avg session</div></div>
+      <div class="stat"><div class="v mono" id="stOver">0</div><div class="k">Ran over (7d)</div></div>
+      <div class="stat"><div class="v mono" id="stDrift">—</div><div class="k">vs recommended</div></div>
+    </div>
+    <div class="small faint" style="margin-top:12px" id="driftMsg"></div>
+  </div>
+  <div class="card">
+    <h2>By reason (last 7 days)</h2>
+    <div id="reasonBreak"></div>
+  </div>
+</section>
+
+<!-- ============ SETTINGS ============ -->
+<section class="view" id="v-settings">
+  <div class="card">
+    <h2>Treatment</h2>
+    <div class="grid2">
+      <label class="f"><span>Total trays</span><input type="number" id="setTotal" min="1" max="200" inputmode="numeric"></label>
+      <label class="f"><span>Days per tray</span><input type="number" id="setDays" min="1" max="60" inputmode="numeric"></label>
+    </div>
+    <label class="f"><span>Daily wear goal (hours)</span><input type="number" id="setGoal" min="1" max="24" step="0.5" inputmode="decimal"></label>
+    <div class="tiny faint">Most aligner plans ask for 20–22 hours a day. Follow whatever your orthodontist told you.</div>
+  </div>
+
+  <div class="card">
+    <h2>Reminders</h2>
+    <div class="switch">
+      <div><div class="lbl">Notifications</div><div class="desc" id="permTxt">Nudge me when a tray is due back in</div></div>
+      <div class="tog" id="togNotify" onclick="toggleNotify()"></div>
+    </div>
+    <div class="switch">
+      <div><div class="lbl">Keep nagging</div><div class="desc">Repeat the reminder every few minutes until the tray is back in</div></div>
+      <div class="tog" id="togNag" onclick="toggleNag()"></div>
+    </div>
+    <div class="switch">
+      <div><div class="lbl">Vibrate</div><div class="desc">Buzz with reminders (Android)</div></div>
+      <div class="tog" id="togVib" onclick="toggleVib()"></div>
+    </div>
+    <label class="f" style="margin-top:12px"><span>Repeat every (minutes)</span><input type="number" id="setNag" min="1" max="60" inputmode="numeric"></label>
+    <label class="f"><span>Warn me this many minutes early</span><input type="number" id="setEarly" min="0" max="30" inputmode="numeric"></label>
+    <div class="tiny faint">Reminders fire while the app is installed and running in the background. Phones can pause background tabs, so for long breaks it's worth also setting a phone alarm.</div>
+  </div>
+
+  <div class="card">
+    <h2>Out-of-mouth allowances</h2>
+    <div class="small faint" style="margin-bottom:12px">How long you're aiming to have the tray out for each thing. The app times you against these.</div>
+    <div id="presetEdit"></div>
+  </div>
+
+  <div class="card">
+    <h2>Your data</h2>
+    <div class="small faint" style="margin-bottom:12px">Everything is stored on this device only — nothing is uploaded anywhere. Back it up now and then.</div>
+    <div class="btnrow">
+      <button class="btn sm" onclick="exportData()">Export backup</button>
+      <button class="btn sm" onclick="document.getElementById('importFile').click()">Import backup</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json" class="hidden" onchange="importData(event)">
+    <button class="btn sm danger" style="margin-top:9px" onclick="resetAll()">Erase everything</button>
+  </div>
+
+  <div class="card tight center tiny faint">
+    Aligner Tracker · <span id="verLbl">v1</span><br>
+    Not medical advice. Follow your orthodontist's instructions.
+  </div>
+</section>
+
+</main>
+
+<nav>
+  <button data-v="today" class="active" onclick="go('today')"><span class="ic">⏱</span>Today</button>
+  <button data-v="trays" onclick="go('trays')"><span class="ic">🦷</span>Trays</button>
+  <button data-v="appts" onclick="go('appts')"><span class="ic">📅</span>Appts</button>
+  <button data-v="notes" onclick="go('notes')"><span class="ic">📝</span>Notes</button>
+  <button data-v="stats" onclick="go('stats')"><span class="ic">📊</span>Stats</button>
+</nav>
+
+<!-- ============ SHEETS ============ -->
+<div class="sheet" id="sheetOut">
+  <div class="scrim" onclick="closeSheet('sheetOut')"></div>
+  <div class="panel">
+    <div class="grab"></div>
+    <h2>Why is it coming out?</h2>
+    <div class="chips" id="outChips"></div>
+    <div style="margin-top:14px">
+      <label class="f"><span>Or set your own (minutes)</span>
+        <input type="number" id="customMins" placeholder="e.g. 45" inputmode="numeric"></label>
+      <button class="btn sm" onclick="startOut('custom')">Start with custom time</button>
+    </div>
+    <button class="btn ghost sm" style="margin-top:9px" onclick="closeSheet('sheetOut')">Cancel</button>
+  </div>
+</div>
+
+<div class="sheet" id="sheetAppt">
+  <div class="scrim" onclick="closeSheet('sheetAppt')"></div>
+  <div class="panel">
+    <div class="grab"></div>
+    <h2 id="apptTitle">Add appointment</h2>
+    <label class="f"><span>What is it</span><input id="aTitle" placeholder="Ortho check-up"></label>
+    <label class="f"><span>When</span><input type="datetime-local" id="aWhen"></label>
+    <label class="f"><span>Where</span><input id="aWhere" placeholder="Dr. Smith, Main St"></label>
+    <label class="f"><span>Notes</span><textarea id="aNotes" placeholder="Bring last tray, ask about attachments…"></textarea></label>
+    <button class="btn primary" onclick="saveAppt()">Save appointment</button>
+    <button class="btn ghost sm" style="margin-top:9px" onclick="closeSheet('sheetAppt')">Cancel</button>
+  </div>
+</div>
+
+<div class="sheet" id="sheetTray">
+  <div class="scrim" onclick="closeSheet('sheetTray')"></div>
+  <div class="panel">
+    <div class="grab"></div>
+    <h2>Edit current tray</h2>
+    <label class="f"><span>Tray number</span><input type="number" id="tNum" min="1" inputmode="numeric"></label>
+    <label class="f"><span>Started this tray on</span><input type="datetime-local" id="tStart"></label>
+    <button class="btn primary" onclick="saveTrayEdit()">Save</button>
+    <button class="btn ghost sm" style="margin-top:9px" onclick="closeSheet('sheetTray')">Cancel</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* =========================================================================
+   Aligner Tracker — offline, local-only aligner wear tracker.
+   All state lives in localStorage. Nothing leaves the device.
+   ========================================================================= */
+
+const KEY = 'alignerTracker.v1';
+const MIN = 60000, HOUR = 3600000, DAY = 86400000;
+
+const DEFAULTS = () => ({
+  version: 1,
+  settings: {
+    totalTrays: 20,
+    daysPerTray: 7,
+    goalHours: 22,
+    notify: false,
+    nag: true,
+    nagMins: 5,
+    earlyMins: 5,
+    vibrate: true,
+    presets: [
+      { id: 'meal',  label: 'Meal',     emoji: '🍽️', mins: 30 },
+      { id: 'snack', label: 'Snack',    emoji: '🍎', mins: 15 },
+      { id: 'drink', label: 'Drink',    emoji: '☕', mins: 15 },
+      { id: 'brush', label: 'Brushing', emoji: '🪥', mins: 10 },
+      { id: 'other', label: 'Other',    emoji: '⏳', mins: 20 }
+    ]
+  },
+  tray: { number: 1, startedAt: Date.now(), notified: false },
+  trayHistory: [],
+  sessions: [],
+  appointments: [],
+  notes: []
+});
+
+let S = load();
+
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) {
+      // persist immediately, otherwise the tray start time would reset on every reload
+      const fresh = DEFAULTS();
+      localStorage.setItem(KEY, JSON.stringify(fresh));
+      return fresh;
+    }
+    const d = JSON.parse(raw), base = DEFAULTS();
+    // merge so new settings added in later versions still appear
+    return Object.assign(base, d, { settings: Object.assign(base.settings, d.settings || {}) });
+  } catch (e) {
+    console.warn('load failed', e);
+    return DEFAULTS();
+  }
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); }
+  catch (e) { toast('Could not save — storage full?'); }
+}
+
+/* ------------------------------ helpers ------------------------------- */
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/** "3h 42m" — compact duration from ms. */
+function dur(ms, opts = {}) {
+  ms = Math.max(0, ms);
+  const h = Math.floor(ms / HOUR), m = Math.floor((ms % HOUR) / MIN);
+  if (h && m) return h + 'h ' + m + 'm';
+  if (h) return h + 'h';
+  if (m) return m + 'm';
+  return opts.zero || (Math.floor(ms / 1000) + 's');
+}
+/** "3:42" / "22:05:11" — clock-style for the big timer. */
+function clockDur(ms, withSecs) {
+  ms = Math.max(0, ms);
+  const h = Math.floor(ms / HOUR), m = Math.floor((ms % HOUR) / MIN), s = Math.floor((ms % MIN) / 1000);
+  const p = n => String(n).padStart(2, '0');
+  if (withSecs && h === 0) return m + ':' + p(s);
+  return h + ':' + p(m) + (withSecs ? ':' + p(s) : '');
+}
+const timeStr = t => new Date(t).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+const dateStr = t => new Date(t).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+const dayStart = t => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
+
+function relDay(t) {
+  const d0 = dayStart(t), today = dayStart(Date.now());
+  const diff = Math.round((d0 - today) / DAY);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Tomorrow';
+  if (diff === -1) return 'Yesterday';
+  if (diff > 1 && diff < 7) return 'In ' + diff + ' days';
+  return dateStr(t);
+}
+function toLocalInput(t) {
+  const d = new Date(t), p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
+/* --------------------------- core wear math --------------------------- */
+const openSession = () => S.sessions.find(s => !s.in) || null;
+const goalMs = () => S.settings.goalHours * HOUR;
+/** When tracking began — the earliest tray start we know about. */
+function trackingStart() {
+  const first = S.trayHistory.length ? S.trayHistory[0].startedAt : S.tray.startedAt;
+  const firstSess = S.sessions.length ? S.sessions[0].out : Infinity;
+  return Math.min(first, firstSess);
+}
+/** Total ms the aligner was OUT of the mouth within [a, b). */
+function outMsBetween(a, b) {
+  const now = Date.now();
+  let total = 0;
+  for (const s of S.sessions) {
+    const start = s.out, end = s.in || now;
+    const lo = Math.max(start, a), hi = Math.min(end, b);
+    if (hi > lo) total += hi - lo;
+  }
+  return total;
+}
+/** Wear/out totals for one calendar day. */
+function dayStats(ds) {
+  const now = Date.now();
+  const from = Math.max(ds, trackingStart());
+  const to = Math.min(ds + DAY, now);
+  if (to <= from) return { wear: 0, out: 0, elapsed: 0, tracked: false };
+  const out = outMsBetween(from, to);
+  return { wear: Math.max(0, (to - from) - out), out, elapsed: to - from, tracked: true };
+}
+/** Wear/out totals for the current tray. */
+function trayStats() {
+  const now = Date.now();
+  const from = S.tray.startedAt;
+  const elapsed = Math.max(0, now - from);
+  const out = outMsBetween(from, now);
+  const days = Math.max(1, elapsed / DAY);
+  return { elapsed, out, wear: Math.max(0, elapsed - out), avg: Math.max(0, elapsed - out) / days, days };
+}
+const trayDueAt = () => S.tray.startedAt + S.settings.daysPerTray * DAY;
+const trayDayNum = () => clamp(Math.floor((Date.now() - S.tray.startedAt) / DAY) + 1, 1, 999);
+/** Recommended end time of an out-session. */
+const sessionDue = s => s.out + s.rec * MIN;
+
+/* ------------------------------ actions ------------------------------- */
+function openOutSheet() {
+  const html = S.settings.presets.map(p =>
+    `<button class="chip" onclick="startOut('${p.id}')">
+       <span class="e">${p.emoji}</span><span class="l">${esc(p.label)}</span><span class="m">${p.mins} min</span>
+     </button>`).join('');
+  $('outChips').innerHTML = html;
+  $('customMins').value = '';
+  openSheet('sheetOut');
+}
+
+function startOut(id) {
+  if (openSession()) { toast('Tray is already out'); return; }
+  let preset = S.settings.presets.find(p => p.id === id);
+  let rec, label, emoji;
+  if (id === 'custom') {
+    rec = parseInt($('customMins').value, 10);
+    if (!rec || rec < 1) { toast('Enter a number of minutes'); return; }
+    label = 'Custom'; emoji = '⏳';
+  } else if (preset) {
+    rec = preset.mins; label = preset.label; emoji = preset.emoji;
+  } else return;
+
+  S.sessions.push({
+    id: uid(), tray: S.tray.number, reason: id, label, emoji,
+    rec, out: Date.now(), in: null, notifiedEarly: false, notifiedDue: false, lastNag: 0
+  });
+  save(); closeSheet('sheetOut'); render();
+  toast(`Timer started — ${rec} min for ${label.toLowerCase()}`);
+  buzz(30);
+}
+
+function putBackIn() {
+  const s = openSession();
+  if (!s) return;
+  s.in = Date.now();
+  const actual = s.in - s.out, rec = s.rec * MIN;
+  save(); render();
+  clearNotif(s.id);
+  const diff = actual - rec;
+  if (diff > MIN) toast(`Back in — ${dur(actual)} out, ${dur(diff)} over your ${s.rec}m allowance`);
+  else if (diff < -MIN) toast(`Back in — ${dur(actual)} out, ${dur(-diff)} under. Nice.`);
+  else toast(`Back in — ${dur(actual)} out. Right on target.`);
+  buzz(40);
+}
+
+function cancelOut() {
+  const s = openSession();
+  if (!s) return;
+  if (!confirm('Delete this out-session? It will not count against your wear time.')) return;
+  S.sessions = S.sessions.filter(x => x.id !== s.id);
+  save(); clearNotif(s.id); render(); toast('Session removed');
+}
+
+function deleteSession(id) {
+  if (!confirm('Delete this session?')) return;
+  S.sessions = S.sessions.filter(x => x.id !== id);
+  save(); render();
+}
+
+function nextTray() {
+  const t = S.settings.totalTrays;
+  if (S.tray.number >= t && !confirm(`Tray ${S.tray.number} is your last tray of ${t}. Go past it anyway?`)) return;
+  const st = trayStats();
+  S.trayHistory.push({
+    number: S.tray.number, startedAt: S.tray.startedAt, endedAt: Date.now(),
+    wear: st.wear, out: st.out
+  });
+  S.tray = { number: S.tray.number + 1, startedAt: Date.now(), notified: false };
+  save(); render();
+  toast(`Now on tray ${S.tray.number} 🎉`);
+  buzz([30, 60, 30]);
+}
+
+function prevTray() {
+  if (S.tray.number <= 1) { toast('Already on tray 1'); return; }
+  if (!confirm('Go back to tray ' + (S.tray.number - 1) + '?')) return;
+  const last = S.trayHistory.pop();
+  S.tray = {
+    number: S.tray.number - 1,
+    startedAt: last ? last.startedAt : S.tray.startedAt - S.settings.daysPerTray * DAY,
+    notified: false
+  };
+  save(); render(); toast('Back on tray ' + S.tray.number);
+}
+
+function openTrayEdit() {
+  $('tNum').value = S.tray.number;
+  $('tStart').value = toLocalInput(S.tray.startedAt);
+  openSheet('sheetTray');
+}
+function saveTrayEdit() {
+  const n = parseInt($('tNum').value, 10);
+  const st = $('tStart').value ? new Date($('tStart').value).getTime() : S.tray.startedAt;
+  if (!n || n < 1) { toast('Tray number must be 1 or more'); return; }
+  if (st > Date.now()) { toast("Start date can't be in the future"); return; }
+  S.tray.number = n; S.tray.startedAt = st; S.tray.notified = false;
+  save(); closeSheet('sheetTray'); render(); toast('Tray updated');
+}
+
+/* --------------------------- appointments ----------------------------- */
+let editingAppt = null;
+function openApptSheet(id) {
+  editingAppt = id || null;
+  const a = id ? S.appointments.find(x => x.id === id) : null;
+  $('apptTitle').textContent = a ? 'Edit appointment' : 'Add appointment';
+  $('aTitle').value = a ? a.title : '';
+  $('aWhen').value = toLocalInput(a ? a.when : Date.now() + DAY);
+  $('aWhere').value = a ? a.where : '';
+  $('aNotes').value = a ? a.notes : '';
+  openSheet('sheetAppt');
+}
+function saveAppt() {
+  const title = $('aTitle').value.trim() || 'Appointment';
+  const when = $('aWhen').value ? new Date($('aWhen').value).getTime() : 0;
+  if (!when) { toast('Pick a date and time'); return; }
+  const data = { title, when, where: $('aWhere').value.trim(), notes: $('aNotes').value.trim() };
+  if (editingAppt) {
+    Object.assign(S.appointments.find(a => a.id === editingAppt), data);
+  } else {
+    S.appointments.push(Object.assign({ id: uid(), n24: false, n1: false }, data));
+  }
+  S.appointments.sort((a, b) => a.when - b.when);
+  save(); closeSheet('sheetAppt'); render(); toast('Appointment saved');
+}
+function deleteAppt(id) {
+  if (!confirm('Delete this appointment?')) return;
+  S.appointments = S.appointments.filter(a => a.id !== id);
+  save(); render();
+}
+
+/* ------------------------------- notes -------------------------------- */
+function addNote() {
+  const text = $('noteText').value.trim();
+  if (!text) { toast('Write something first'); return; }
+  S.notes.unshift({ id: uid(), text, tag: $('noteTag').value, tray: S.tray.number, at: Date.now() });
+  $('noteText').value = '';
+  save(); render(); toast('Note saved');
+}
+function deleteNote(id) {
+  if (!confirm('Delete this note?')) return;
+  S.notes = S.notes.filter(n => n.id !== id);
+  save(); render();
+}
+
+/* --------------------------- notifications ---------------------------- */
+const NOTIF_TAG = 'aligner-due';
+let swReg = null;
+
+function notifySupported() { return 'Notification' in window; }
+
+async function askNotify() {
+  if (!notifySupported()) { toast('This browser has no notification support'); return false; }
+  const p = await Notification.requestPermission();
+  S.settings.notify = (p === 'granted');
+  save(); render();
+  toast(p === 'granted' ? 'Reminders on ✓' : 'Permission denied — check browser settings');
+  return S.settings.notify;
+}
+
+async function toggleNotify() {
+  if (!S.settings.notify) {
+    if (notifySupported() && Notification.permission !== 'granted') { await askNotify(); return; }
+    S.settings.notify = true;
+  } else S.settings.notify = false;
+  save(); render();
+}
+function toggleNag() { S.settings.nag = !S.settings.nag; save(); render(); }
+function toggleVib() { S.settings.vibrate = !S.settings.vibrate; save(); render(); }
+
+function buzz(pattern) {
+  if (S.settings.vibrate && navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) {} }
+}
+
+function notify(title, body, tag) {
+  if (!S.settings.notify || !notifySupported() || Notification.permission !== 'granted') return;
+  const opts = {
+    body, tag: tag || NOTIF_TAG, renotify: true, icon: 'icon-192.png', badge: 'icon-192.png',
+    vibrate: S.settings.vibrate ? [200, 100, 200] : undefined, requireInteraction: true
+  };
+  try {
+    if (swReg && swReg.showNotification) swReg.showNotification(title, opts);
+    else new Notification(title, opts);
+  } catch (e) { console.warn('notify failed', e); }
+  buzz([200, 100, 200]);
+}
+function clearNotif(tag) {
+  if (!swReg || !swReg.getNotifications) return;
+  swReg.getNotifications({ tag: tag || NOTIF_TAG }).then(ns => ns.forEach(n => n.close())).catch(() => {});
+}
+
+/** Fires reminders. Called every tick. */
+function checkReminders() {
+  const now = Date.now();
+  const s = openSession();
+  if (s) {
+    const due = sessionDue(s);
+    const early = due - S.settings.earlyMins * MIN;
+    if (S.settings.earlyMins > 0 && !s.notifiedEarly && now >= early && now < due) {
+      s.notifiedEarly = true; save();
+      notify('Nearly time to put your tray back in',
+        `${S.settings.earlyMins} min left of your ${s.rec}-minute ${s.label.toLowerCase()} break.`, s.id);
+    }
+    if (!s.notifiedDue && now >= due) {
+      s.notifiedDue = true; s.lastNag = now; save();
+      notify('🦷 Put your aligner back in',
+        `Tray ${s.tray} has been out ${dur(now - s.out)} — your ${s.label.toLowerCase()} allowance was ${s.rec} min.`, s.id);
+    } else if (s.notifiedDue && S.settings.nag && now - s.lastNag >= S.settings.nagMins * MIN) {
+      s.lastNag = now; save();
+      notify('🦷 Aligner still out',
+        `${dur(now - s.out)} out of your mouth — ${dur(now - due)} past your allowance.`, s.id);
+    }
+  }
+  // tray change due
+  if (!S.tray.notified && now >= trayDueAt()) {
+    S.tray.notified = true; save();
+    notify('Time for your next tray',
+      `Tray ${S.tray.number} has been in for ${S.settings.daysPerTray} days. Swap to tray ${S.tray.number + 1}.`, 'tray');
+  }
+  // appointments
+  for (const a of S.appointments) {
+    const away = a.when - now;
+    if (!a.n24 && away <= DAY && away > HOUR) {
+      a.n24 = true; save();
+      notify('Appointment tomorrow', `${a.title} — ${dateStr(a.when)} at ${timeStr(a.when)}`, 'appt' + a.id);
+    }
+    if (!a.n1 && away <= HOUR && away > -30 * MIN) {
+      a.n1 = true; save();
+      notify('Appointment soon', `${a.title} at ${timeStr(a.when)}${a.where ? ' · ' + a.where : ''}`, 'appt' + a.id);
+    }
+  }
+}
+
+/* ------------------------------- UI shell ----------------------------- */
+let currentView = 'today';
+function go(v) {
+  currentView = v;
+  document.querySelectorAll('section.view').forEach(el => el.classList.toggle('active', el.id === 'v-' + v));
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.v === v));
+  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+  render();
+}
+function openSheet(id) { $(id).classList.add('open'); }
+function closeSheet(id) { $(id).classList.remove('open'); }
+
+let toastT;
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+/* ------------------------------ rendering ----------------------------- */
+function render() {
+  renderToday();
+  if (currentView === 'trays') renderTrays();
+  if (currentView === 'appts') renderAppts();
+  if (currentView === 'notes') renderNotes();
+  if (currentView === 'stats') renderStats();
+  if (currentView === 'settings') renderSettings();
+}
+
+/* -- today -- */
+function renderToday() {
+  const now = Date.now(), s = openSession(), hero = $('hero');
+  const banner = $('permBanner');
+  banner.classList.toggle('hidden',
+    !notifySupported() || Notification.permission === 'granted' || Notification.permission === 'denied');
+
+  if (s) {
+    const outFor = now - s.out, due = sessionDue(s), left = due - now, over = left < 0;
+    hero.className = 'card hero ' + (over ? 'over' : 'out');
+    $('heroState').textContent = 'Out · ' + s.label;
+    $('heroTime').textContent = clockDur(outFor, true);
+    $('heroSub').innerHTML = over
+      ? `<span class="warn">${dur(-left)} over</span> — recommended ${s.rec} min, back in by ${timeStr(due)}`
+      : `${dur(left, { zero: 'under a minute' })} left · put back in by ${timeStr(due)}`;
+    $('heroBarWrap').classList.remove('hidden');
+    const pct = clamp(outFor / (s.rec * MIN) * 100, 0, 100);
+    const bar = $('heroBar');
+    bar.style.width = pct + '%';
+    bar.className = over ? 'red' : (pct > 75 ? 'amber' : '');
+    $('heroBarL').textContent = 'Out since ' + timeStr(s.out);
+    $('heroBarR').textContent = s.rec + ' min allowance';
+    $('actionIn').classList.add('hidden');
+    $('actionOut').classList.remove('hidden');
+  } else {
+    const lastIn = S.sessions.length ? Math.max(...S.sessions.map(x => x.in || 0)) : 0;
+    const since = lastIn ? now - lastIn : now - S.tray.startedAt;
+    hero.className = 'card hero in';
+    $('heroState').textContent = 'In your mouth';
+    $('heroTime').textContent = clockDur(since, since < HOUR);
+    $('heroSub').textContent = lastIn ? 'Back in since ' + timeStr(lastIn) : 'Since you started tray ' + S.tray.number;
+    $('heroBarWrap').classList.add('hidden');
+    $('actionIn').classList.remove('hidden');
+    $('actionOut').classList.add('hidden');
+  }
+
+  // today's wear
+  const d = dayStats(dayStart(now)), goal = goalMs();
+  const pct = clamp(d.wear / goal * 100, 0, 100);
+  $('dayWear').textContent = clockDur(d.wear);
+  $('dayPct').textContent = Math.round(d.wear / goal * 100) + '%';
+  $('dayGoalLbl').textContent = S.settings.goalHours + 'h';
+  const db = $('dayBar');
+  db.style.width = pct + '%';
+  db.className = d.wear >= goal ? '' : (d.out > (24 - S.settings.goalHours) * HOUR ? 'red' : '');
+  $('dayGoalMark').style.left = '100%';
+  $('dayOutLbl').textContent = 'Out ' + dur(d.out, { zero: '0m' }) + ' today';
+  // remaining out "budget" for the rest of the day
+  const budget = (24 - S.settings.goalHours) * HOUR - d.out;
+  $('dayLeftLbl').innerHTML = budget >= 0
+    ? dur(budget, { zero: '0m' }) + ' out-time left'
+    : `<span style="color:var(--red)">${dur(-budget)} over budget</span>`;
+
+  // sessions today
+  const today = S.sessions.filter(x => (x.in || now) >= dayStart(now)).sort((a, b) => b.out - a.out);
+  $('todaySessions').innerHTML = today.length ? today.map(x => {
+    const actual = (x.in || now) - x.out, over = actual - x.rec * MIN;
+    const tag = !x.in ? '<span class="tag amber">out now</span>'
+      : over > MIN ? `<span class="tag red">+${dur(over)}</span>`
+      : `<span class="tag">on target</span>`;
+    return `<div class="item">
+      <div class="ico">${x.emoji}</div>
+      <div class="body">
+        <div class="t">${esc(x.label)} · ${dur(actual, { zero: '<1m' })} ${tag}</div>
+        <div class="s">${timeStr(x.out)} → ${x.in ? timeStr(x.in) : 'now'} · allowance ${x.rec}m</div>
+      </div>
+      <button class="x" onclick="deleteSession('${x.id}')">✕</button>
+    </div>`;
+  }).join('') : '<div class="empty"><span class="e">✨</span>Tray hasn\'t come out yet today.</div>';
+
+  // mini tray strip
+  $('miniTray').textContent = S.tray.number;
+  $('miniDay').textContent = trayDayNum();
+  $('miniDays').textContent = S.settings.daysPerTray;
+  const due = trayDueAt();
+  const rel = relDay(due);
+  // relDay falls back to a plain date past a week out — don't print the date twice
+  const relative = /^(Today|Tomorrow|Yesterday|In )/.test(rel);
+  $('miniDue').textContent = due > now
+    ? (relative ? 'Next tray ' + rel.toLowerCase() + ' · ' + dateStr(due) : 'Next tray on ' + rel)
+    : 'Due for the next tray — ' + dur(now - due) + ' ago';
+}
+
+/* -- trays -- */
+function renderTrays() {
+  const st = trayStats(), now = Date.now(), set = S.settings;
+  $('trayNum').textContent = S.tray.number;
+  $('trayTotal').textContent = set.totalTrays;
+  const through = clamp((S.tray.number - 1 + clamp(st.elapsed / (set.daysPerTray * DAY), 0, 1)) / set.totalTrays * 100, 0, 100);
+  $('trayPctTxt').textContent = Math.round(through) + '%';
+  $('trayProg').style.width = through + '%';
+  $('trayStarted').textContent = 'Started ' + dateStr(S.tray.startedAt);
+  const left = set.totalTrays - S.tray.number;
+  $('trayLeft').textContent = left > 0
+    ? left + ' tray' + (left === 1 ? '' : 's') + ' left · ~' + dateStr(now + left * set.daysPerTray * DAY)
+    : 'Final tray';
+
+  $('tsDay').textContent = trayDayNum();
+  $('tsDays').textContent = set.daysPerTray;
+  $('tsAvg').textContent = clockDur(st.avg);
+  $('tsWorn').textContent = dur(st.wear, { zero: '0m' });
+  $('tsOut').textContent = dur(st.out, { zero: '0m' });
+
+  const due = trayDueAt();
+  const pctGoal = st.avg / goalMs() * 100;
+  let msg;
+  if (now >= due) msg = `<span class="tag red">Due now</span> You've been on tray ${S.tray.number} for ${dur(st.elapsed)}.`;
+  else msg = `<span class="tag blue">${relDay(due)}</span> Change to tray ${S.tray.number + 1} on ${dateStr(due)}, ${timeStr(due)}.`;
+  msg += pctGoal >= 100
+    ? ` Averaging ${clockDur(st.avg)}/day — at or above your ${set.goalHours}h goal.`
+    : ` Averaging ${clockDur(st.avg)}/day, ${dur(goalMs() - st.avg)} short of your ${set.goalHours}h goal.`;
+  $('trayDueMsg').innerHTML = msg;
+
+  const hist = S.trayHistory.slice().reverse();
+  $('trayHistory').innerHTML = hist.length ? hist.map(h => {
+    const days = (h.endedAt - h.startedAt) / DAY;
+    const avg = h.wear / Math.max(1, days);
+    const good = avg >= goalMs();
+    return `<div class="item">
+      <div class="ico">${good ? '✅' : '🦷'}</div>
+      <div class="body">
+        <div class="t">Tray ${h.number} · ${days.toFixed(1)} days</div>
+        <div class="s">${dateStr(h.startedAt)} → ${dateStr(h.endedAt)} · avg ${clockDur(avg)}/day, out ${dur(h.out, { zero: '0m' })}</div>
+      </div>
+      <span class="tag ${good ? '' : 'grey'}">${Math.round(avg / goalMs() * 100)}%</span>
+    </div>`;
+  }).join('') : '<div class="empty"><span class="e">🦷</span>No finished trays yet. Tap “Next tray” when you switch.</div>';
+}
+
+/* -- appointments -- */
+function renderAppts() {
+  const now = Date.now();
+  const up = S.appointments.filter(a => a.when >= now - HOUR).sort((a, b) => a.when - b.when);
+  const past = S.appointments.filter(a => a.when < now - HOUR).sort((a, b) => b.when - a.when);
+  const row = a => `<div class="item">
+      <div class="ico">${a.when < now ? '📋' : '📅'}</div>
+      <div class="body" onclick="openApptSheet('${a.id}')">
+        <div class="t">${esc(a.title)} <span class="tag ${a.when - now < DAY && a.when > now ? 'amber' : 'grey'}">${relDay(a.when)}</span></div>
+        <div class="s">${dateStr(a.when)} · ${timeStr(a.when)}${a.where ? ' · ' + esc(a.where) : ''}</div>
+        ${a.notes ? `<div class="s" style="color:var(--dim);margin-top:4px">${esc(a.notes)}</div>` : ''}
+      </div>
+      <button class="x" onclick="deleteAppt('${a.id}')">✕</button>
+    </div>`;
+  $('apptUpcoming').innerHTML = up.length ? up.map(row).join('')
+    : '<div class="empty"><span class="e">📅</span>Nothing booked. Add your next ortho visit.</div>';
+  $('apptPast').innerHTML = past.length ? past.map(row).join('')
+    : '<div class="empty small">No past appointments.</div>';
+}
+
+/* -- notes -- */
+const TAGS = { general: ['General', 'grey'], pain: ['Pain', 'red'], fit: ['Fit', 'amber'], question: ['Ask ortho', 'blue'], progress: ['Progress', ''] };
+function renderNotes() {
+  $('notesList').innerHTML = S.notes.length ? S.notes.map(n => {
+    const t = TAGS[n.tag] || TAGS.general;
+    return `<div class="item">
+      <div class="ico">📝</div>
+      <div class="body">
+        <div class="t" style="white-space:pre-wrap;font-weight:500">${esc(n.text)}</div>
+        <div class="s" style="margin-top:5px">
+          <span class="tag ${t[1]}">${t[0]}</span>
+          &nbsp;Tray ${n.tray} · ${dateStr(n.at)}, ${timeStr(n.at)}
+        </div>
+      </div>
+      <button class="x" onclick="deleteNote('${n.id}')">✕</button>
+    </div>`;
+  }).join('') : '<div class="empty"><span class="e">📝</span>No notes yet.</div>';
+}
+
+/* -- stats -- */
+function renderStats() {
+  const now = Date.now(), goal = goalMs(), today = dayStart(now);
+  const days = [];
+  for (let i = 13; i >= 0; i--) {
+    const ds = today - i * DAY;
+    days.push(Object.assign({ ds }, dayStats(ds)));
+  }
+  const tracked = days.filter(d => d.tracked);
+  const max = Math.max(goal, ...days.map(d => d.wear), 1);
+  $('chart').innerHTML =
+    `<div class="goalline" style="bottom:${(goal / max) * 100}%"></div>` +
+    days.map(d => {
+      const h = (d.wear / max) * 100;
+      const hit = d.wear >= goal;
+      const isToday = d.ds === today;
+      return `<div class="col" title="${dur(d.wear)}">
+        <div class="b ${hit ? '' : 'miss'}" style="height:${Math.max(2, h)}%;${isToday ? 'opacity:.72' : ''}"></div>
+        <div class="lb">${new Date(d.ds).toLocaleDateString([], { weekday: 'narrow' })}</div>
+      </div>`;
+    }).join('');
+  $('chartGoal').textContent = S.settings.goalHours + 'h';
+
+  const done = tracked.filter(d => d.ds !== today);         // complete days only
+  // average over completed days only — today is still in progress and would drag it down
+  const avgAll = done.length ? done.reduce((a, d) => a + d.wear, 0) / done.length : 0;
+  $('chartAvg').textContent = done.length ? 'Avg ' + clockDur(avgAll) + '/day (full days)' : 'No full days yet';
+
+  const last7 = done.slice(-7);
+  const avg7 = last7.length ? last7.reduce((a, d) => a + d.wear, 0) / last7.length : 0;
+  $('stAvg7').textContent = last7.length ? clockDur(avg7) : '—';
+  $('stBest').textContent = done.length ? clockDur(Math.max(...done.map(d => d.wear))) : '—';
+  $('stHit').textContent = done.length ? Math.round(done.filter(d => d.wear >= goal).length / done.length * 100) + '%' : '0%';
+
+  // streak: today counts only if already at goal
+  let streak = 0;
+  const seq = days.slice().reverse();
+  for (const d of seq) {
+    if (d.ds === today) { if (d.wear >= goal) streak++; continue; }
+    if (d.tracked && d.wear >= goal) streak++; else break;
+  }
+  $('stStreak').textContent = streak + (streak === 1 ? ' day' : ' days');
+
+  // out-session stats (last 7 days)
+  const from = today - 6 * DAY;
+  const sess = S.sessions.filter(s => s.in && s.out >= from);
+  const totalActual = sess.reduce((a, s) => a + (s.in - s.out), 0);
+  const totalRec = sess.reduce((a, s) => a + s.rec * MIN, 0);
+  const over = sess.filter(s => (s.in - s.out) - s.rec * MIN > MIN);
+  $('stSess').textContent = sess.length;
+  $('stAvgOut').textContent = sess.length ? dur(totalActual / sess.length, { zero: '<1m' }) : '—';
+  $('stOver').textContent = over.length;
+  const drift = totalActual - totalRec;
+  $('stDrift').textContent = sess.length ? (drift >= 0 ? '+' : '−') + dur(Math.abs(drift), { zero: '0m' }) : '—';
+  $('driftMsg').innerHTML = !sess.length ? 'No completed out-sessions in the last 7 days.'
+    : drift > 0
+      ? `You've had the tray out <b>${dur(drift)} longer</b> than your own allowances over ${sess.length} sessions — about ${dur(drift / 7)} a day of extra out-time.`
+      : `You're <b>${dur(-drift)} under</b> your allowances across ${sess.length} sessions. Well controlled.`;
+
+  // by reason
+  const byReason = {};
+  for (const s of sess) {
+    const k = s.reason;
+    byReason[k] = byReason[k] || { label: s.label, emoji: s.emoji, n: 0, actual: 0, rec: 0 };
+    byReason[k].n++; byReason[k].actual += s.in - s.out; byReason[k].rec += s.rec * MIN;
+  }
+  const rows = Object.values(byReason).sort((a, b) => b.actual - a.actual);
+  $('reasonBreak').innerHTML = rows.length ? rows.map(r => {
+    const d2 = r.actual - r.rec;
+    return `<div class="item">
+      <div class="ico">${r.emoji}</div>
+      <div class="body">
+        <div class="t">${esc(r.label)} · ${r.n}×</div>
+        <div class="s">${dur(r.actual)} total · avg ${dur(r.actual / r.n, { zero: '<1m' })} (allowance ${dur(r.rec / r.n)})</div>
+      </div>
+      <span class="tag ${d2 > MIN ? 'red' : ''}">${d2 >= 0 ? '+' : '−'}${dur(Math.abs(d2), { zero: '0m' })}</span>
+    </div>`;
+  }).join('') : '<div class="empty small">Nothing logged in the last 7 days.</div>';
+}
+
+/* -- settings -- */
+function renderSettings() {
+  const s = S.settings;
+  // never overwrite a field the user is currently typing in
+  const set = (id, v) => { const el = $(id); if (document.activeElement !== el) el.value = v; };
+  set('setTotal', s.totalTrays); set('setDays', s.daysPerTray); set('setGoal', s.goalHours);
+  set('setNag', s.nagMins); set('setEarly', s.earlyMins);
+  $('togNotify').classList.toggle('on', !!s.notify);
+  $('togNag').classList.toggle('on', !!s.nag);
+  $('togVib').classList.toggle('on', !!s.vibrate);
+  $('permTxt').textContent = !notifySupported() ? 'Not supported in this browser'
+    : Notification.permission === 'denied' ? 'Blocked — re-enable in browser settings'
+    : 'Nudge me when a tray is due back in';
+  // rebuild the preset rows only when the list itself changes — re-rendering them
+  // mid-edit would discard whatever the user was typing
+  const pe = $('presetEdit');
+  if (pe.childElementCount === s.presets.length) return;
+  pe.innerHTML = s.presets.map((p, i) => `
+    <div class="row" style="margin-bottom:10px">
+      <div style="font-size:20px;width:30px">${p.emoji}</div>
+      <input value="${esc(p.label)}" style="flex:1" oninput="setPreset(${i},'label',this.value)">
+      <input type="number" min="1" max="600" inputmode="numeric" value="${p.mins}" style="width:82px"
+        oninput="setPreset(${i},'mins',this.value)">
+      <span class="tiny faint">min</span>
+    </div>`).join('');
+}
+function setPreset(i, field, val) {
+  if (field === 'mins') { const n = parseInt(val, 10); if (n > 0) S.settings.presets[i].mins = n; }
+  else S.settings.presets[i].label = val;
+  save();
+}
+
+function bindSettings() {
+  const num = (id, key, min, max, float) => {
+    $(id).addEventListener('change', () => {
+      let v = float ? parseFloat($(id).value) : parseInt($(id).value, 10);
+      if (isNaN(v)) { renderSettings(); return; }
+      S.settings[key] = clamp(v, min, max);
+      $(id).value = S.settings[key];
+      save(); render(); toast('Saved');
+    });
+  };
+  num('setTotal', 'totalTrays', 1, 200); num('setDays', 'daysPerTray', 1, 60);
+  num('setGoal', 'goalHours', 1, 24, true); num('setNag', 'nagMins', 1, 60); num('setEarly', 'earlyMins', 0, 30);
+}
+
+/* ---------------------------- data in/out ----------------------------- */
+function exportData() {
+  const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'aligner-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  toast('Backup downloaded');
+}
+function importData(ev) {
+  const f = ev.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      if (!d || !d.tray || !Array.isArray(d.sessions)) throw new Error('bad file');
+      if (!confirm('Replace everything on this device with the backup?')) return;
+      const base = DEFAULTS();
+      S = Object.assign(base, d, { settings: Object.assign(base.settings, d.settings || {}) });
+      save(); render(); toast('Backup restored');
+    } catch (e) { toast("That file isn't a valid backup"); }
+    ev.target.value = '';
+  };
+  r.readAsText(f);
+}
+function resetAll() {
+  if (!confirm('Erase all trays, sessions, notes and appointments? This cannot be undone.')) return;
+  if (!confirm('Really erase everything?')) return;
+  S = DEFAULTS(); save(); render(); toast('Everything erased');
+}
+
+/* ------------------------------ install ------------------------------- */
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt = e;
+  $('installBtn').style.display = 'grid';
+});
+$('installBtn').addEventListener('click', async () => {
+  if (!deferredPrompt) { toast('Use your browser menu → Add to Home Screen'); return; }
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  $('installBtn').style.display = 'none';
+});
+window.addEventListener('appinstalled', () => { $('installBtn').style.display = 'none'; toast('Installed ✓'); });
+
+/* ------------------------------- loop --------------------------------- */
+function tick() {
+  checkReminders();
+  renderToday();
+  const s = openSession();
+  // live-update the tab title so a backgrounded tab still shows the countdown
+  document.title = s
+    ? (sessionDue(s) - Date.now() < 0 ? '⚠️ ' : '⏳ ') + clockDur(Date.now() - s.out, true) + ' out'
+    : 'Aligner Tracker';
+}
+
+document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+window.addEventListener('focus', render);
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js')
+    .then(r => { swReg = r; })
+    .catch(() => { /* file:// or unsupported — app still works */ });
+  navigator.serviceWorker.addEventListener('message', e => {
+    if (e.data === 'put-back-in') { putBackIn(); }
+  });
+}
+
+bindSettings();
+render();
+setInterval(tick, 1000);
+tick();
+
+</script>
+</body>
+</html>
