@@ -12,20 +12,25 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root{
-  --bg:#0d1b1e; --bg2:#122528; --card:#162e33; --card2:#1c383e;
-  --line:#254a51; --text:#e8f4f2; --dim:#8fb0ae; --faint:#5f8481;
-  --mint:#3ddc97; --mint-d:#1f9c68; --amber:#ffbe55; --red:#ff6b6b;
-  --blue:#63b3ed;
-  --r:16px; --shadow:0 6px 20px rgba(0,0,0,.35);
+  --bg:#08161a; --bg2:#0e2126; --card:#12292f; --card2:#193740;
+  --line:#21454e; --text:#eaf6f4; --dim:#93b4b3; --faint:#628b8b;
+  --mint:#4ade9b; --mint-d:#17966a; --amber:#fbbf3f; --red:#fb7185;
+  --blue:#60a5fa; --violet:#c084fc;
+  --r:20px; --shadow:0 10px 30px -8px rgba(0,0,0,.55);
   --safe-b:env(safe-area-inset-bottom,0px);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 body{
   background:var(--bg); color:var(--text);
+  background-image:
+    radial-gradient(120% 65% at 50% -10%, rgba(74,222,155,.10), transparent 62%),
+    radial-gradient(90% 45% at 100% 100%, rgba(96,165,250,.06), transparent 70%);
+  background-attachment:fixed;
   font:16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
-  padding-bottom:calc(78px + var(--safe-b));
+  padding-bottom:calc(82px + var(--safe-b));
   overscroll-behavior-y:contain;
+  -webkit-font-smoothing:antialiased;
 }
 h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.02em}
 button,input,select,textarea{font:inherit;color:inherit}
@@ -35,17 +40,19 @@ button{cursor:pointer;border:none;background:none}
 /* ---------- layout ---------- */
 header{
   position:sticky;top:0;z-index:20;
-  background:rgba(13,27,30,.92);backdrop-filter:blur(12px);
-  border-bottom:1px solid var(--line);
+  background:rgba(8,22,26,.78);backdrop-filter:blur(18px) saturate(1.3);
+  border-bottom:1px solid rgba(255,255,255,.06);
   padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 12px;
   display:flex;align-items:center;gap:10px;
 }
 header .brand{display:flex;align-items:center;gap:9px;flex:1;min-width:0}
-header .logo{width:28px;height:28px;border-radius:9px;background:linear-gradient(140deg,var(--mint),#2a9d8f);
-  display:grid;place-items:center;font-size:15px;flex:none}
-header h1{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hbtn{width:38px;height:38px;border-radius:11px;background:var(--card);border:1px solid var(--line);
-  display:grid;place-items:center;font-size:16px;flex:none}
+header .logo{width:30px;height:30px;border-radius:10px;background:linear-gradient(145deg,var(--mint),#189d78);
+  display:grid;place-items:center;font-size:16px;flex:none;box-shadow:0 3px 12px -2px rgba(74,222,155,.5)}
+header h1{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.015em}
+.hbtn{width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);display:grid;place-items:center;font-size:16px;flex:none;
+  transition:background .15s}
+.hbtn:active{background:rgba(255,255,255,.12)}
 main{padding:16px 16px 24px;max-width:640px;margin:0 auto}
 section.view{display:none;animation:fade .18s ease}
 section.view.active{display:block}
@@ -53,19 +60,28 @@ section.view.active{display:block}
 
 nav{
   position:fixed;left:0;right:0;bottom:0;z-index:30;
-  background:rgba(18,37,40,.96);backdrop-filter:blur(12px);
-  border-top:1px solid var(--line);
-  display:flex;padding:8px 4px calc(8px + var(--safe-b));
+  background:rgba(10,27,31,.86);backdrop-filter:blur(20px) saturate(1.3);
+  border-top:1px solid rgba(255,255,255,.07);
+  display:flex;padding:9px 6px calc(9px + var(--safe-b));
 }
-nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
-  padding:6px 2px;color:var(--faint);font-size:10.5px;font-weight:600;letter-spacing:.01em;border-radius:12px}
-nav button .ic{font-size:19px;line-height:1}
-nav button.active{color:var(--mint)}
+nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:7px 2px;color:var(--faint);font-size:10.5px;font-weight:650;letter-spacing:.01em;
+  border-radius:14px;transition:color .18s,background .18s}
+nav button .ic{font-size:19px;line-height:1;transition:transform .18s}
+nav button.active{color:var(--mint);background:rgba(74,222,155,.11)}
+nav button.active .ic{transform:translateY(-1px) scale(1.06)}
+nav button:active .ic{transform:scale(.9)}
 
 /* ---------- cards ---------- */
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
-.card.tight{padding:13px 14px}
-.card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:12px;font-weight:700}
+.card{
+  background:linear-gradient(168deg,rgba(255,255,255,.045),rgba(255,255,255,.012));
+  background-color:var(--card);
+  border:1px solid rgba(255,255,255,.075);
+  border-radius:var(--r);padding:17px;margin-bottom:14px;box-shadow:var(--shadow);
+}
+.card.tight{padding:14px 15px}
+.card h2{font-size:11.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--dim);
+  margin-bottom:13px;font-weight:750}
 .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .muted{color:var(--dim)}
 .faint{color:var(--faint)}
@@ -76,57 +92,82 @@ nav button.active{color:var(--mint)}
 .stack>*+*{margin-top:10px}
 
 /* ---------- status hero ---------- */
-.hero{text-align:center;padding:22px 16px 18px;position:relative;overflow:hidden}
-.hero.in{background:linear-gradient(165deg,#17423a,#16302f)}
-.hero.out{background:linear-gradient(165deg,#4a3520,#2f2a20)}
-.hero.over{background:linear-gradient(165deg,#4d2323,#331f1f)}
-.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:750;letter-spacing:.09em;
-  text-transform:uppercase;padding:6px 13px;border-radius:99px;background:rgba(0,0,0,.28)}
+.hero{text-align:center;padding:20px 16px 17px;position:relative;overflow:hidden;transition:background .5s}
+.hero::after{content:"";position:absolute;inset:-40% -20% auto;height:70%;pointer-events:none;
+  background:radial-gradient(60% 100% at 50% 0,rgba(255,255,255,.07),transparent 70%)}
+.hero.in{background-color:#123a33;background-image:linear-gradient(170deg,rgba(74,222,155,.14),transparent 60%)}
+.hero.out{background-color:#3b2e18;background-image:linear-gradient(170deg,rgba(251,191,63,.16),transparent 60%)}
+.hero.over{background-color:#3f1f28;background-image:linear-gradient(170deg,rgba(251,113,133,.18),transparent 60%)}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:750;letter-spacing:.1em;
+  text-transform:uppercase;padding:7px 14px;border-radius:99px;background:rgba(0,0,0,.3);
+  border:1px solid rgba(255,255,255,.07);position:relative}
 .hero.in .pill{color:var(--mint)} .hero.out .pill{color:var(--amber)} .hero.over .pill{color:var(--red)}
-.dot{width:7px;height:7px;border-radius:99px;background:currentColor;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
-.bigtime{font-size:52px;font-weight:750;letter-spacing:-.035em;margin:12px 0 2px;line-height:1}
-.hero .sub{font-size:13.5px;color:var(--dim);min-height:20px}
-.hero .warn{color:var(--red);font-weight:650}
+.dot{width:7px;height:7px;border-radius:99px;background:currentColor;animation:pulse 2s infinite;
+  box-shadow:0 0 8px currentColor}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.22}}
 
-.btn{display:block;width:100%;padding:15px;border-radius:14px;font-size:16px;font-weight:700;
-  background:var(--card2);color:var(--text);border:1px solid var(--line);transition:transform .1s,filter .15s}
-.btn:active{transform:scale(.985);filter:brightness(1.12)}
-.btn.primary{background:linear-gradient(140deg,var(--mint),var(--mint-d));color:#06251b;border:none}
-.btn.warn{background:linear-gradient(140deg,#ffc46b,#e8912f);color:#331f00;border:none}
-.btn.danger{background:#3a1f22;border-color:#6b3238;color:#ffb3b3}
-.btn.sm{padding:10px;font-size:14px;border-radius:11px}
-.btn.ghost{background:transparent}
+/* progress ring */
+.ring{position:relative;width:min(62vw,224px);aspect-ratio:1;margin:15px auto 8px}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg);display:block}
+.ring circle{fill:none;stroke-width:10;stroke-linecap:round}
+.ring .track{stroke:rgba(255,255,255,.09)}
+.ring .prog{stroke:var(--mint);transition:stroke-dashoffset .7s cubic-bezier(.34,.8,.3,1),stroke .35s;
+  filter:drop-shadow(0 0 7px rgba(74,222,155,.45))}
+.ring .prog.amber{stroke:var(--amber);filter:drop-shadow(0 0 7px rgba(251,191,63,.45))}
+.ring .prog.red{stroke:var(--red);filter:drop-shadow(0 0 8px rgba(251,113,133,.5))}
+.ringmid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.ringcap{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.09em;font-weight:700}
+
+.bigtime{font-size:clamp(27px,8.6vw,37px);font-weight:700;letter-spacing:-.03em;line-height:1}
+.hero .sub{font-size:13.5px;color:var(--dim);min-height:20px;padding:0 4px}
+.hero .warn{color:var(--red);font-weight:700}
+.herofoot{margin-top:13px;padding-top:11px;border-top:1px solid rgba(255,255,255,.08)}
+
+.btn{display:block;width:100%;padding:15px;border-radius:15px;font-size:16px;font-weight:700;
+  letter-spacing:-.01em;background:rgba(255,255,255,.06);color:var(--text);
+  border:1px solid rgba(255,255,255,.09);transition:transform .12s,filter .15s,background .15s}
+.btn:active{transform:scale(.975);filter:brightness(1.1)}
+.btn.primary{background:linear-gradient(140deg,#5ce9a8,var(--mint-d));color:#04231a;border:none;
+  box-shadow:0 6px 18px -6px rgba(74,222,155,.65)}
+.btn.warn{background:linear-gradient(140deg,#fcc95f,#e08c22);color:#2e1c00;border:none;
+  box-shadow:0 6px 18px -6px rgba(251,191,63,.55)}
+.btn.danger{background:rgba(251,113,133,.1);border-color:rgba(251,113,133,.32);color:#ffc2cb}
+.btn.sm{padding:11px;font-size:14px;border-radius:12px}
+.btn.ghost{background:transparent;border-color:transparent;color:var(--dim);font-weight:600}
+.btn.ghost:active{background:rgba(255,255,255,.05)}
 .btnrow{display:flex;gap:9px}.btnrow>*{flex:1}
 
 /* ---------- chips ---------- */
 .chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:9px}
-.chip{padding:12px 8px;border-radius:13px;background:var(--card2);border:1px solid var(--line);
-  text-align:center;transition:transform .1s}
-.chip:active{transform:scale(.96)}
+.chip{padding:13px 8px;border-radius:15px;background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.09);text-align:center;transition:transform .12s,background .15s}
+.chip:active{transform:scale(.94);background:rgba(74,222,155,.14)}
 .chip .e{font-size:21px;display:block;margin-bottom:3px}
 .chip .l{font-size:12.5px;font-weight:650;display:block}
 .chip .m{font-size:11px;color:var(--faint);display:block;margin-top:1px}
 
 /* ---------- bars ---------- */
-.bar{height:9px;border-radius:99px;background:#0c2024;overflow:hidden;position:relative}
-.bar>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--mint-d),var(--mint));
-  transition:width .4s ease}
+.bar{height:9px;border-radius:99px;background:rgba(0,0,0,.32);overflow:hidden;position:relative;
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.35)}
+.bar>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--mint-d),#5ce9a8);
+  transition:width .55s cubic-bezier(.34,.8,.3,1)}
 .bar>i.amber{background:linear-gradient(90deg,#c9821f,var(--amber))}
-.bar>i.red{background:linear-gradient(90deg,#c53d3d,var(--red))}
+.bar>i.red{background:linear-gradient(90deg,#c5364f,var(--red))}
 .bar .goal{position:absolute;top:-3px;bottom:-3px;width:2px;background:rgba(255,255,255,.55);border-radius:2px}
 
 /* ---------- stat grid ---------- */
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.stat{background:var(--card2);border-radius:13px;padding:12px}
-.stat .v{font-size:22px;font-weight:750;letter-spacing:-.02em}
-.stat .k{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;font-weight:650;margin-top:2px}
+.stat{background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.06);
+  border-radius:15px;padding:13px}
+.stat .v{font-size:22px;font-weight:700;letter-spacing:-.025em}
+.stat .k{font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.07em;font-weight:700;margin-top:3px}
 
 /* ---------- list items ---------- */
-.item{display:flex;gap:11px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--line)}
+.item{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.06)}
 .item:last-child{border-bottom:none;padding-bottom:0}
 .item:first-child{padding-top:0}
-.item .ico{width:34px;height:34px;border-radius:11px;background:var(--card2);display:grid;place-items:center;font-size:16px;flex:none}
+.item .ico{width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.05);display:grid;place-items:center;font-size:16px;flex:none}
 .item .body{flex:1;min-width:0}
 .item .t{font-weight:620;font-size:14.5px}
 .item .s{font-size:12.5px;color:var(--faint);margin-top:2px}
@@ -144,9 +185,12 @@ nav button.active{color:var(--mint)}
 label.f{display:block;margin-bottom:11px}
 label.f>span{display:block;font-size:12px;color:var(--dim);font-weight:650;margin-bottom:5px;
   text-transform:uppercase;letter-spacing:.05em}
-input,select,textarea{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:11px;
-  padding:12px;outline:none;-webkit-appearance:none;appearance:none}
-input:focus,select,textarea:focus{border-color:var(--mint)}
+input,select,textarea{width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.1);
+  border-radius:13px;padding:13px;outline:none;-webkit-appearance:none;appearance:none;
+  transition:border-color .15s,box-shadow .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--mint);box-shadow:0 0 0 3px rgba(74,222,155,.16)}
+.snapbox{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07)}
+.snaprow{gap:10px}
 textarea{min-height:88px;resize:vertical;font-family:inherit}
 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238fb0ae' stroke-width='2' fill='none'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 13px center}
@@ -175,13 +219,14 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   font-size:15px;flex:none;display:grid;place-items:center}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .cal .dow{font-size:10px;color:var(--faint);text-align:center;font-weight:750;padding-bottom:2px;letter-spacing:.04em}
-.cal .cell{aspect-ratio:1;border-radius:11px;background:var(--card2);border:1.5px solid transparent;
+.cal .cell{aspect-ratio:1;border-radius:12px;background:rgba(255,255,255,.05);border:1.5px solid transparent;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative;
-  transition:transform .1s}
-.cal .cell:active{transform:scale(.93)}
+  transition:transform .12s,background .15s}
+.cal .cell:active{transform:scale(.9);background:rgba(255,255,255,.12)}
 .cal .cell.pad{background:transparent;pointer-events:none}
-.cal .cell.future{background:#122a2e;opacity:.55}
-.cal .cell.today{border-color:var(--mint)}
+.cal .cell.future{background:rgba(255,255,255,.02);opacity:.6}
+.cal .cell.today{border-color:var(--mint);box-shadow:0 0 0 3px rgba(74,222,155,.14)}
+.cal .cell.hit{background:rgba(74,222,155,.1)}
 .cal .cell .n{font-size:13px;font-weight:650;line-height:1}
 .cal .cell.hit .n{color:var(--mint)}
 .cal .cell .dots{display:flex;gap:3px;height:5px;align-items:center}
@@ -202,9 +247,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .sheet{position:fixed;inset:0;z-index:60;display:none}
 .sheet.open{display:block}
 .sheet .scrim{position:absolute;inset:0;background:rgba(0,0,0,.6);animation:fade .2s}
-.sheet .panel{position:absolute;left:0;right:0;bottom:0;background:var(--bg2);border-radius:22px 22px 0 0;
-  border-top:1px solid var(--line);padding:8px 16px calc(20px + var(--safe-b));max-height:88vh;overflow:auto;
-  animation:up .22s cubic-bezier(.2,.8,.3,1)}
+.sheet .panel{position:absolute;left:0;right:0;bottom:0;background:var(--bg2);border-radius:26px 26px 0 0;
+  border-top:1px solid rgba(255,255,255,.11);padding:8px 16px calc(20px + var(--safe-b));max-height:88vh;overflow:auto;
+  box-shadow:0 -20px 50px -12px rgba(0,0,0,.6);
+  animation:up .26s cubic-bezier(.2,.9,.25,1)}
 @keyframes up{from{transform:translateY(100%)}to{transform:none}}
 .sheet .grab{width:38px;height:4px;border-radius:99px;background:var(--line);margin:6px auto 14px}
 .sheet h2{font-size:19px;margin-bottom:14px}
@@ -242,13 +288,20 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
   <div class="card hero" id="hero">
     <div class="pill" id="heroPill"><span class="dot"></span><span id="heroState">In</span></div>
-    <div class="bigtime mono" id="heroTime">0:00</div>
-    <div class="sub" id="heroSub">&nbsp;</div>
-    <div id="heroBarWrap" class="hidden" style="margin:14px 0 2px">
-      <div class="bar"><i id="heroBar" style="width:0%"></i></div>
-      <div class="row tiny faint" style="margin-top:5px">
-        <span id="heroBarL">out</span><span id="heroBarR"></span>
+    <div class="ring">
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        <circle class="track" cx="100" cy="100" r="88"></circle>
+        <circle class="prog" id="heroRing" cx="100" cy="100" r="88"
+                stroke-dasharray="552.9" stroke-dashoffset="552.9"></circle>
+      </svg>
+      <div class="ringmid">
+        <div class="bigtime mono" id="heroTime">0:00</div>
+        <div class="ringcap" id="heroCap">&nbsp;</div>
       </div>
+    </div>
+    <div class="sub" id="heroSub">&nbsp;</div>
+    <div class="row tiny faint herofoot">
+      <span id="heroBarL">&nbsp;</span><span id="heroBarR">&nbsp;</span>
     </div>
   </div>
 
@@ -476,6 +529,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <button class="btn sm" onclick="document.getElementById('importFile').click()">Import backup</button>
     </div>
     <input type="file" id="importFile" accept="application/json" class="hidden" onchange="importData(event)">
+    <div class="snapbox" id="snapBox"></div>
     <button class="btn sm danger" style="margin-top:9px" onclick="resetAll()">Erase everything</button>
   </div>
 
@@ -595,6 +649,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
    ========================================================================= */
 
 const KEY = 'alignerTracker.v1';
+const SNAP_KEY = 'alignerTracker.snapshot';
 const MIN = 60000, HOUR = 3600000, DAY = 86400000;
 
 const DEFAULTS = () => ({
@@ -657,6 +712,42 @@ function load() {
 function save() {
   try { localStorage.setItem(KEY, JSON.stringify(S)); }
   catch (e) { toast('Could not save — storage full?'); }
+}
+
+/* Keeps one untouched copy of the data per day, written before anything else
+   runs. If an update or a mis-tap ever damages the live data, this is the way
+   back — it is a separate key, so nothing that writes the live data touches it. */
+function snapshot() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (!raw) return;
+    const today = new Date().toDateString();
+    const prev = JSON.parse(localStorage.getItem(SNAP_KEY) || 'null');
+    if (prev && prev.day === today) return;          // already saved one today
+    localStorage.setItem(SNAP_KEY, JSON.stringify({ day: today, at: Date.now(), data: raw }));
+  } catch (e) { /* storage full or unavailable — never block startup for this */ }
+}
+
+function snapshotInfo() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SNAP_KEY) || 'null');
+    if (!s || !s.data) return null;
+    const d = JSON.parse(s.data);
+    return { at: s.at, tray: d.tray ? d.tray.number : '?', sessions: (d.sessions || []).length };
+  } catch (e) { return null; }
+}
+
+function restoreSnapshot() {
+  const info = snapshotInfo();
+  if (!info) { toast('No automatic backup found'); return; }
+  if (!confirm(`Restore the copy saved ${dateStr(info.at)} at ${timeStr(info.at)}?\n\n` +
+    `It has tray ${info.tray} and ${info.sessions} out-sessions. Anything logged since then is replaced.`)) return;
+  try {
+    const raw = JSON.parse(localStorage.getItem(SNAP_KEY)).data;
+    localStorage.setItem(KEY, raw);
+    S = load();
+    render(); toast('Restored from ' + dateStr(info.at));
+  } catch (e) { toast('That backup could not be read'); }
 }
 
 /* ------------------------------ helpers ------------------------------- */
@@ -1309,6 +1400,14 @@ function render() {
 }
 
 /* -- today -- */
+const RING_C = 2 * Math.PI * 88;    // circumference of the r=88 progress circle
+function setRing(pct, cls) {
+  const el = $('heroRing');
+  el.setAttribute('stroke-dasharray', RING_C.toFixed(1));
+  el.setAttribute('stroke-dashoffset', (RING_C * (1 - clamp(pct, 0, 100) / 100)).toFixed(1));
+  el.setAttribute('class', 'prog ' + (cls || ''));
+}
+
 function renderToday() {
   const now = Date.now(), s = openSession(), hero = $('hero');
   const banner = $('permBanner');
@@ -1320,14 +1419,12 @@ function renderToday() {
     hero.className = 'card hero ' + (over ? 'over' : 'out');
     $('heroState').textContent = 'Out · ' + s.label;
     $('heroTime').textContent = clockDur(outFor, true);
+    $('heroCap').textContent = over ? 'over your ' + s.rec + ' min' : 'of ' + s.rec + ' min';
     $('heroSub').innerHTML = over
       ? `<span class="warn">${dur(-left)} over</span> — recommended ${s.rec} min, back in by ${timeStr(due)}`
       : `${dur(left, { zero: 'under a minute' })} left · put back in by ${timeStr(due)}`;
-    $('heroBarWrap').classList.remove('hidden');
     const pct = clamp(outFor / (s.rec * MIN) * 100, 0, 100);
-    const bar = $('heroBar');
-    bar.style.width = pct + '%';
-    bar.className = over ? 'red' : (pct > 75 ? 'amber' : '');
+    setRing(pct, over ? 'red' : (pct > 75 ? 'amber' : ''));
     $('alarmAt').textContent = timeStr(due);
     $('heroBarL').textContent = 'Out since ' + timeStr(s.out);
     $('heroBarR').textContent = s.rec + ' min allowance';
@@ -1344,7 +1441,16 @@ function renderToday() {
     $('heroTime').textContent = clockDur(since, true);
     $('heroSub').textContent = lastIn ? 'Back in since ' + timeStr(lastIn)
       : (from > S.tray.startedAt ? 'Since you started tracking' : 'Since you started tray ' + S.tray.number);
-    $('heroBarWrap').classList.add('hidden');
+    // while it's in, the ring tracks progress towards today's goal — so the caption
+    // describes the ring, not the number, which is the live in-mouth timer
+    const dg = dayStats(dayStart(now));
+    const gp = clamp(dg.wear / goalMs() * 100, 0, 100);
+    setRing(gp, gp >= 100 ? '' : (gp < 40 ? 'amber' : ''));
+    $('heroCap').textContent = Math.round(gp) + '% of today\'s goal';
+    const budget = (24 - S.settings.goalHours) * HOUR - dg.out;
+    $('heroBarL').textContent = 'Today ' + dur(dg.wear, { zero: '0m' }) + ' of ' + S.settings.goalHours + 'h';
+    $('heroBarR').textContent = budget >= 0
+      ? dur(budget, { zero: '0m' }) + ' out-time left' : dur(-budget) + ' over budget';
     $('actionIn').classList.remove('hidden');
     $('actionOut').classList.add('hidden');
   }
@@ -1592,6 +1698,15 @@ function renderSettings() {
   $('permTxt').textContent = !notifySupported() ? 'Not supported in this browser'
     : Notification.permission === 'denied' ? 'Blocked — re-enable in browser settings'
     : 'Nudge me when a tray is due back in';
+  const snap = snapshotInfo();
+  $('snapBox').innerHTML = snap
+    ? `<div class="row snaprow">
+         <div><div class="small" style="font-weight:650">Automatic backup</div>
+           <div class="tiny faint">Saved ${dateStr(snap.at)}, ${timeStr(snap.at)} · tray ${snap.tray}, ${snap.sessions} sessions</div></div>
+         <button class="btn sm" style="width:auto;padding:9px 14px;flex:none" onclick="restoreSnapshot()">Restore</button>
+       </div>`
+    : '<div class="tiny faint">An automatic backup is saved once a day, the moment you open the app.</div>';
+
   // rebuild the preset rows only when the list itself changes — re-rendering them
   // mid-edit would discard whatever the user was typing
   const pe = $('presetEdit');
@@ -1696,6 +1811,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+snapshot();          // copy today's data aside BEFORE anything can modify it
 S = load();
 bindSettings();
 ['bfCurrent', 'bfDays', 'bfAnchor', 'bfDate'].forEach(id =>
