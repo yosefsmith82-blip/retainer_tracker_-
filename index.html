@@ -1187,7 +1187,7 @@ function startOut(id) {
   save(); closeSheet('sheetOut'); render();
 
   // this runs inside the tap that started the session, so audio is allowed
-  const armed = Alarm.arm(sessionDue(sess));
+  const armed = Alarm.arm(sessionDue(sess), sess);
   toast(armed ? `Timer started — alarm at ${timeStr(sessionDue(sess))}`
               : `Timer started — ${rec} min for ${label.toLowerCase()}`);
   buzz(30);
@@ -1707,6 +1707,84 @@ function deleteNote(id) {
    suspends a context that has nothing playing. Force-quitting still stops it.
    Arming needs a user gesture (autoplay rules), which taking the tray out is. */
 
+/* Running inside the native shell (Capacitor) or as a website? The native build
+   can hand the alarm to iOS itself, which survives a force-quit; the website
+   falls back to scheduled Web Audio, which does not. */
+const Native = {
+  get on() {
+    return !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function'
+      && window.Capacitor.isNativePlatform());
+  },
+  plugin(name) {
+    return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name]) || null;
+  }
+};
+
+/* Notification ids have to be numbers, and stable per session so they can be
+   cancelled again. Derive them from the session id. */
+function notifIds(sessionId) {
+  let h = 0;
+  for (let i = 0; i < sessionId.length; i++) h = (h * 31 + sessionId.charCodeAt(i)) & 0x3fffff;
+  const base = 1000 + (h % 900000);
+  return [0, 1, 2, 3, 4].map(i => base + i);
+}
+
+const NativeAlarm = {
+  async ask() {
+    const LN = Native.plugin('LocalNotifications');
+    if (!LN) return false;
+    try {
+      let p = await LN.checkPermissions();
+      if (p.display !== 'granted') p = await LN.requestPermissions();
+      return p.display === 'granted';
+    } catch (e) { return false; }
+  },
+
+  async arm(sess, dueMs) {
+    const LN = Native.plugin('LocalNotifications');
+    if (!LN) return false;
+    if (!(await this.ask())) return false;
+    await this.disarm(sess.id);
+
+    const ids = notifIds(sess.id);
+    const every = (S.settings.nagMins || 5) * MIN;
+    const list = [];
+    // the alert itself, then repeats while it is still out
+    for (let i = 0; i < (S.settings.nag ? ids.length : 1); i++) {
+      const at = new Date(dueMs + i * every);
+      if (at.getTime() < Date.now() + 2000) continue;
+      list.push({
+        id: ids[i],
+        title: i === 0 ? 'Put your aligner back in' : 'Aligner still out',
+        body: i === 0
+          ? `Tray ${sess.tray} — your ${sess.label.toLowerCase()} allowance of ${sess.rec} min is up.`
+          : `Still out, ${dur(i * every + sess.rec * MIN)} since you took it out.`,
+        schedule: { at, allowWhileIdle: true },
+        sound: null,                       // the system alert sound
+        smallIcon: 'ic_stat_icon'
+      });
+    }
+    if (!list.length) return false;
+    try { await LN.schedule({ notifications: list }); return true; }
+    catch (e) { console.warn('schedule failed', e); return false; }
+  },
+
+  async disarm(sessionId) {
+    const LN = Native.plugin('LocalNotifications');
+    if (!LN) return;
+    try {
+      const ids = sessionId ? notifIds(sessionId) : null;
+      if (ids) await LN.cancel({ notifications: ids.map(id => ({ id })) });
+      else {
+        const pending = await LN.getPending();
+        if (pending && pending.notifications && pending.notifications.length) {
+          await LN.cancel({ notifications: pending.notifications.map(n => ({ id: n.id })) });
+        }
+      }
+    } catch (e) { /* nothing scheduled */ }
+  }
+};
+
 const Alarm = {
   ctx: null, keep: null, nodes: [], armedFor: null,
 
@@ -1774,8 +1852,14 @@ const Alarm = {
     }
   },
 
-  arm(dueMs) {
+  arm(dueMs, sess) {
     if (!S.settings.alarm) return false;
+    // native build: hand it to the OS, which survives a force-quit
+    if (Native.on && sess) {
+      this.armedFor = dueMs;
+      NativeAlarm.arm(sess, dueMs).then(ok => { if (!ok) this.armedFor = null; renderToday(); });
+      return true;
+    }
     const ctx = this.ensure();
     if (!ctx) return false;
     this.disarm(true);
@@ -1791,6 +1875,7 @@ const Alarm = {
   },
 
   disarm(keepContext) {
+    if (Native.on) NativeAlarm.disarm();
     this.nodes.forEach(n => { try { n.stop(); } catch (e) {} });
     this.nodes = [];
     this.armedFor = null;
@@ -1812,7 +1897,7 @@ let rearmPending = false;
 function rearmIfNeeded() {
   if (!rearmPending) return;
   const s = openSession();
-  if (s && sessionDue(s) > Date.now()) Alarm.arm(sessionDue(s));
+  if (s && sessionDue(s) > Date.now()) Alarm.arm(sessionDue(s), s);
   rearmPending = false;
   renderToday();
 }
@@ -1905,7 +1990,7 @@ function toggleAlarm() {
   S.settings.alarm = !S.settings.alarm;
   save();
   const s = openSession();
-  if (S.settings.alarm && s && sessionDue(s) > Date.now()) Alarm.arm(sessionDue(s));
+  if (S.settings.alarm && s && sessionDue(s) > Date.now()) Alarm.arm(sessionDue(s), s);
   if (!S.settings.alarm) Alarm.disarm();
   render();
   toast(S.settings.alarm ? 'Alarm on' : 'Alarm off');
@@ -1917,7 +2002,12 @@ function setAgo(mins, btn) {
 function toggleVib() { S.settings.vibrate = !S.settings.vibrate; save(); render(); }
 
 function buzz(pattern) {
-  if (S.settings.vibrate && navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) {} }
+  if (!S.settings.vibrate) return;
+  const H = Native.plugin('Haptics');
+  if (H) {                                   // native gives a proper taptic thump
+    try { H.impact({ style: Array.isArray(pattern) ? 'HEAVY' : 'MEDIUM' }); return; } catch (e) {}
+  }
+  if (navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) {} }
 }
 
 function notify(title, body, tag) {
@@ -2044,7 +2134,9 @@ function renderToday() {
       $('alarmHint').textContent = 'Turn it on in Settings, or add this to your calendar →';
     } else if (armed) {
       $('alarmState').textContent = '🔔 Alarm set for ' + timeStr(due);
-      $('alarmHint').textContent = 'Rings even if you switch apps — but not if you force-quit';
+      $('alarmHint').textContent = Native.on
+        ? 'Your phone holds this one — it rings even if the app is closed'
+        : 'Rings even if you switch apps — but not if you force-quit';
     } else if (over) {
       $('alarmState').textContent = '⏰ Time is up';
       $('alarmHint').textContent = 'Put the tray back in';
@@ -2597,7 +2689,9 @@ function tick() {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
 window.addEventListener('focus', render);
 
-if ('serviceWorker' in navigator) {
+// the service worker exists to make the website work offline; the native app is
+// already offline and registering it there only risks serving stale files
+if ('serviceWorker' in navigator && !Native.on) {
   navigator.serviceWorker.register('sw.js')
     .then(r => { swReg = r; })
     .catch(() => { /* file:// or unsupported — app still works */ });
@@ -2629,8 +2723,14 @@ function handleLink() {
 }
 
 // a tray already out when the app opens: arm the alarm on the first touch,
-// since browsers refuse to start audio without one
-if (S.sessions.some(x => !x.in)) rearmPending = true;
+// since browsers refuse to start audio without one. The native build has no such
+// rule — the OS holds the alarm — so it re-arms straight away.
+if (S.sessions.some(x => !x.in)) {
+  if (Native.on) {
+    const s = S.sessions.find(x => !x.in);
+    if (sessionDue(s) > Date.now()) Alarm.arm(sessionDue(s), s);
+  } else rearmPending = true;
+}
 ['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
   document.addEventListener(ev, rearmIfNeeded, { passive: true }));
 ['bfCurrent', 'bfDays', 'bfAnchor', 'bfDate'].forEach(id =>

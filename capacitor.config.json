@@ -1,0 +1,24 @@
+{
+  "appId": "com.yossismith.alignertracker",
+  "appName": "Aligner Tracker",
+  "webDir": "www",
+  "backgroundColor": "#08161aff",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#08161aff"
+  },
+  "android": {
+    "backgroundColor": "#08161aff"
+  },
+  "plugins": {
+    "LocalNotifications": {
+      "smallIcon": "ic_stat_icon",
+      "iconColor": "#4ade9b"
+    },
+    "SplashScreen": {
+      "launchShowDuration": 400,
+      "backgroundColor": "#08161a",
+      "showSpinner": false
+    }
+  }
+}

@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+
+# generated from the files at the repository root by scripts/build-www.sh
+www/
+
+# iOS build output — the project itself is committed, these are not
+ios/App/Pods/
+ios/App/Podfile.lock
+ios/App/App/public/
+ios/App/build/
+ios/DerivedData/
+*.xcuserstate
+xcuserdata/
+
+# Android build output
+android/build/
+android/app/build/
+android/app/src/main/assets/public/
+android/.gradle/
+android/local.properties
+android/captures/
+.idea/
+
+# macOS
+.DS_Store
