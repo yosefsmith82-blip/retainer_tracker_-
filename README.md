@@ -166,6 +166,22 @@ things you meant to ask.
 
 ---
 
+## Locking the app with Face ID
+
+Settings → Privacy. Native builds use Face ID or Touch ID directly; the installed web app
+uses the same sensor through a passkey, so it works either way (https only).
+
+It is a **privacy screen, not encryption** — it stops someone picking up your unlocked phone
+and reading your treatment history, but the data underneath is not encrypted. Two deliberate
+consequences:
+
+- If Face ID fails or is unavailable, a way past appears after a few seconds so you can
+  never be locked out of your own records.
+- The lock is stored separately from your data and is **not** included in backups. A backup
+  restored on a new phone would otherwise ask for a credential that does not exist there.
+
+There is no password to forget, and nothing to recover, because nothing is hidden from you.
+
 ## Your data
 
 Stored only in this browser's local storage on your device. Nothing is uploaded anywhere,

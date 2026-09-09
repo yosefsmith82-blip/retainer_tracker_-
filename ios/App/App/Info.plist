@@ -66,5 +66,7 @@
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Face ID keeps your aligner history private when someone else picks up your phone.</string>
 </dict>
 </plist>

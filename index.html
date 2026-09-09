@@ -369,6 +369,16 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 @keyframes up{from{transform:translateY(100%)}to{transform:none}}
 .sheet .grab{width:38px;height:4px;border-radius:99px;background:var(--line);margin:6px auto 14px}
 .sheet h2{font-size:19px;margin-bottom:14px}
+/* ---------- lock screen ---------- */
+.lockscreen{position:fixed;inset:0;z-index:100;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;padding:24px}
+.lockbox{text-align:center;max-width:320px;width:100%}
+.locklogo{width:74px;height:74px;margin:0 auto 18px;border-radius:24px;
+  background:linear-gradient(145deg,var(--mint),#189d78);display:grid;place-items:center;font-size:36px;
+  box-shadow:0 10px 30px -8px rgba(74,222,155,.55)}
+.lockbox h2{font-size:22px;margin-bottom:4px}
+.lockbox p{margin:0 0 22px}
+
 .toast{position:fixed;left:50%;bottom:calc(94px + var(--safe-b));transform:translateX(-50%) translateY(12px);
   background:var(--card2);border:1px solid var(--line);color:var(--text);padding:11px 17px;border-radius:99px;
   font-size:13.5px;font-weight:600;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.25s;z-index:80;
@@ -711,6 +721,17 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 
   <div class="card">
+    <h2>Privacy</h2>
+    <div class="switch">
+      <div><div class="lbl">Lock with Face ID</div>
+        <div class="desc" id="lockDesc">Ask for Face ID before opening the app</div></div>
+      <div class="tog" id="togLock" onclick="toggleLock()"></div>
+    </div>
+    <div class="tiny faint" style="margin-top:10px">A privacy screen, not encryption — it keeps a
+      passer-by out, but anyone with your unlocked phone could already reach the data.</div>
+  </div>
+
+  <div class="card">
     <h2>Your data</h2>
     <div class="small faint" style="margin-bottom:12px">Everything is stored on this device only — nothing is uploaded anywhere. Back it up now and then.</div>
     <div class="btnrow">
@@ -916,6 +937,21 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div id="dayBody"></div>
     <button class="btn sm" style="margin-top:12px" id="dayAddAppt">+ Add appointment this day</button>
     <button class="btn ghost sm" style="margin-top:9px" onclick="closeSheet('sheetDay')">Close</button>
+  </div>
+</div>
+
+<div class="lockscreen hidden" id="lockScreen">
+  <div class="lockbox">
+    <div class="locklogo">🦷</div>
+    <h2>Aligner Tracker</h2>
+    <p class="small faint">Locked</p>
+    <button class="btn primary" id="lockBtn" onclick="Lock.prompt()">Unlock with Face ID</button>
+    <div class="hidden" id="lockWhy">
+      <p class="tiny faint" style="margin:16px 0 8px;line-height:1.6">
+        Face ID not working? The lock is a privacy screen rather than encryption, so you can
+        turn it off and get back to your data.</p>
+      <button class="btn sm ghost" onclick="Lock.giveUp()">Turn the lock off</button>
+    </div>
   </div>
 </div>
 
@@ -1697,6 +1733,186 @@ function deleteNote(id) {
   if (!confirm('Delete this note?')) return;
   S.notes = S.notes.filter(n => n.id !== id);
   save(); render();
+}
+
+/* ------------------------- Face ID app lock ---------------------------- */
+/* A privacy screen, not encryption: it stops someone picking up an unlocked
+   phone and reading your treatment history. The data itself still sits in the
+   app's storage, so this deters a nosy person, not a determined one.
+   Kept OUTSIDE the app data on purpose — if it travelled inside a backup, the
+   restored copy on a new phone would demand a credential that does not exist
+   there and lock you out of your own history. */
+
+const LOCK_KEY = 'alignerTracker.lock';
+const b64 = {
+  enc: buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''),
+  dec: s => {
+    const t = s.replace(/-/g, '+').replace(/_/g, '/');
+    const bin = atob(t + '='.repeat((4 - t.length % 4) % 4));
+    return Uint8Array.from(bin, c => c.charCodeAt(0));
+  }
+};
+
+function lockCfg() {
+  try { return JSON.parse(localStorage.getItem(LOCK_KEY) || 'null') || { on: false, cred: null, mode: null }; }
+  catch (e) { return { on: false, cred: null, mode: null }; }
+}
+function saveLockCfg(c) { try { localStorage.setItem(LOCK_KEY, JSON.stringify(c)); } catch (e) {} }
+
+const Lock = {
+  failures: 0,
+  hiddenAt: 0,
+
+  /** What kind of biometric can this device offer, if any? */
+  async available() {
+    const B = Native.plugin('BiometricAuth');
+    if (B) {
+      try {
+        const r = await B.checkBiometry();
+        if (r && r.isAvailable) return { mode: 'native', label: r.biometryType === 1 ? 'Touch ID' : 'Face ID' };
+      } catch (e) {}
+      return null;
+    }
+    if (window.PublicKeyCredential && window.isSecureContext) {
+      try {
+        const ok = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+        if (ok) return { mode: 'webauthn', label: 'Face ID' };
+      } catch (e) {}
+    }
+    return null;
+  },
+
+  /** Turn the lock on: native needs nothing stored, the web needs a credential. */
+  async enable() {
+    const av = await this.available();
+    if (!av) { toast('This device has no Face ID or Touch ID set up'); return false; }
+    if (av.mode === 'native') {
+      const ok = await this.verify('Confirm it\'s you to turn the lock on');
+      if (!ok) return false;
+      saveLockCfg({ on: true, cred: null, mode: 'native' });
+      return true;
+    }
+    try {
+      const cred = await navigator.credentials.create({
+        publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          rp: { name: 'Aligner Tracker' },
+          user: {
+            id: crypto.getRandomValues(new Uint8Array(16)),
+            name: 'aligner-tracker', displayName: 'Aligner Tracker'
+          },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+          authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
+          timeout: 60000
+        }
+      });
+      if (!cred) return false;
+      saveLockCfg({ on: true, cred: b64.enc(cred.rawId), mode: 'webauthn' });
+      return true;
+    } catch (e) {
+      toast(e && e.name === 'NotAllowedError' ? 'Cancelled' : 'Face ID could not be set up here');
+      return false;
+    }
+  },
+
+  disable() { saveLockCfg({ on: false, cred: null, mode: null }); },
+
+  async verify(reason) {
+    const cfg = lockCfg();
+    const B = Native.plugin('BiometricAuth');
+    if (B && (cfg.mode === 'native' || !cfg.mode)) {
+      try {
+        await B.authenticate({
+          reason: reason || 'Unlock Aligner Tracker',
+          cancelTitle: 'Cancel',
+          allowDeviceCredential: true,          // passcode fallback, so no lock-out
+          iosFallbackTitle: 'Use passcode'
+        });
+        return true;
+      } catch (e) { return false; }
+    }
+    if (cfg.mode === 'webauthn' && cfg.cred) {
+      try {
+        const got = await navigator.credentials.get({
+          publicKey: {
+            challenge: crypto.getRandomValues(new Uint8Array(32)),
+            allowCredentials: [{ type: 'public-key', id: b64.dec(cfg.cred) }],
+            userVerification: 'required',
+            timeout: 30000
+          }
+        });
+        return !!got;
+      } catch (e) { return false; }
+    }
+    return false;
+  },
+
+  show() {
+    $('lockScreen').classList.remove('hidden');
+    $('lockWhy').classList.add('hidden');
+    this.failures = 0;
+    document.body.style.overflow = 'hidden';
+    // A refused Face ID can leave the platform call pending for its whole timeout,
+    // so never rely on failure counting alone to reveal the way out.
+    clearTimeout(this._escape);
+    this._escape = setTimeout(() => $('lockWhy').classList.remove('hidden'), 8000);
+  },
+
+  hide() {
+    clearTimeout(this._escape);
+    $('lockScreen').classList.add('hidden');
+    $('lockBtn').disabled = false;
+    document.body.style.overflow = '';
+  },
+
+  async prompt() {
+    const btn = $('lockBtn');
+    btn.disabled = true;
+    const ok = await this.verify();
+    btn.disabled = false;
+    if (ok) { this.hide(); this.failures = 0; return; }
+    this.failures++;
+    if (this.failures >= 3) $('lockWhy').classList.remove('hidden');
+    else toast('Not recognised — try again');
+  },
+
+  /** Escape hatch. Honest about what it means. */
+  giveUp() {
+    if (!confirm('Turn the lock off and open the app?\n\nThe lock is a privacy screen, not encryption — ' +
+      'anyone holding your unlocked phone could already reach this data. Only do this on your own phone.')) return;
+    this.disable();
+    this.hide();
+    render();
+    toast('Lock turned off — you can switch it back on in Settings');
+  },
+
+  init() {
+    const cfg = lockCfg();
+    if (!cfg.on) return;
+    this.show();
+    setTimeout(() => this.prompt(), 350);         // let the screen paint first
+    document.addEventListener('visibilitychange', () => {
+      if (!lockCfg().on) return;
+      if (document.hidden) this.hiddenAt = Date.now();
+      else if (this.hiddenAt && Date.now() - this.hiddenAt > 60000 && $('lockScreen').classList.contains('hidden')) {
+        this.show();                              // away for over a minute: lock again
+        setTimeout(() => this.prompt(), 250);
+      }
+    });
+  }
+};
+
+async function toggleLock() {
+  const cfg = lockCfg();
+  if (cfg.on) {
+    const ok = await Lock.verify('Confirm it\'s you to turn the lock off');
+    if (!ok) { toast('Left on'); return; }
+    Lock.disable(); renderSettings(); toast('Lock off');
+  } else {
+    const ok = await Lock.enable();
+    renderSettings();
+    if (ok) toast('Locked — you\'ll need Face ID to open the app');
+  }
 }
 
 /* ---------------------------- the alarm ------------------------------- */
@@ -2575,6 +2791,16 @@ function renderSettings() {
   $('permTxt').textContent = !notifySupported() ? 'Not supported in this browser'
     : Notification.permission === 'denied' ? 'Blocked — re-enable in browser settings'
     : 'Nudge me when a tray is due back in';
+  const lc = lockCfg();
+  $('togLock').classList.toggle('on', !!lc.on);
+  Lock.available().then(av => {
+    $('lockDesc').textContent = av
+      ? 'Ask for ' + av.label + ' before opening the app'
+      : (location.protocol === 'https:' || Native.on
+          ? 'No Face ID or Touch ID is set up on this device'
+          : 'Only available on the installed app, over https');
+  });
+
   const snap = snapshotInfo();
   $('snapBox').innerHTML = snap
     ? `<div class="row snaprow">
@@ -2736,6 +2962,7 @@ if (S.sessions.some(x => !x.in)) {
 ['bfCurrent', 'bfDays', 'bfAnchor', 'bfDate'].forEach(id =>
   $(id).addEventListener('input', previewBackfill));
 render();
+Lock.init();
 handleLink();
 setInterval(tick, 1000);
 tick();
