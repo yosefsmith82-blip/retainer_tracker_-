@@ -66,16 +66,29 @@ red once you're over.
 
 Reminders need notification permission (tap **Enable notifications** on the Today screen).
 
-**These only fire while the app is open.** Phones suspend web apps in the background, so
-nothing runs once you switch away — no timer can tick and no notification can fire without
-a server pushing it. Two things follow from that:
+**The alarm** is the reliable one. When you take the tray out, the app schedules its beeps
+on the Web Audio clock, which runs in the audio thread rather than in JavaScript — so they
+sound at the right moment even after the phone has frozen the app in the background. A
+near-silent tone holds the audio session open, since iOS suspends a context with nothing
+playing. Force-quitting the app stops it; switching away does not. Settings has a volume
+slider and a test button.
+
+The app cannot create an entry in the phone's Clock app — no web app can reach it.
+
+Notification banners are weaker: they only fire while the app is actually running. Two
+things follow:
 
 - **No time is lost.** Wear time is derived from the timestamp of when the tray came out,
   not from a running counter, so closing the app, force-quitting it, or rebooting makes no
   difference — reopen and the elapsed time is correct.
-- **For the alert, use ⏰ Set a phone alarm** on the out-of-mouth screen. It builds a
-  calendar event with an alarm at your due time and hands it to the phone's own calendar,
-  which does go off with the app closed.
+- **The 📅 button** on the out screen still builds a calendar event with an alarm, as a
+  backstop for when you expect to force-quit the app or want it on a shared calendar.
+
+### Fixing a session you logged late
+
+Tap any out-session on the Today screen to correct when it came out, when it went back in,
+or what the allowance was — for when you press the button late, or forget entirely. When
+starting one, the sheet also offers **just now / 5 / 10 / 20 min ago** to backdate it.
 
 ### Trays
 - Which tray you're on, out of how many, and how far through the whole set you are.

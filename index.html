@@ -191,6 +191,22 @@ input,select,textarea{width:100%;background:rgba(0,0,0,.25);border:1px solid rgb
 input:focus,textarea:focus,select:focus{border-color:var(--mint);box-shadow:0 0 0 3px rgba(74,222,155,.16)}
 .snapbox{margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.07)}
 .snaprow{gap:10px}
+.range{-webkit-appearance:none;appearance:none;background:transparent;padding:0;border:none;height:26px}
+.range::-webkit-slider-runnable-track{height:6px;border-radius:99px;background:rgba(255,255,255,.14)}
+.range::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:99px;
+  background:var(--mint);margin-top:-8px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.range::-moz-range-track{height:6px;border-radius:99px;background:rgba(255,255,255,.14)}
+.range::-moz-range-thumb{width:22px;height:22px;border:none;border-radius:99px;background:var(--mint)}
+
+/* alarm status card on the out screen */
+.alarmcard{margin:10px 0;background:rgba(255,255,255,.04);transition:border-color .3s,background .3s}
+.alarmcard.armed{border-color:rgba(74,222,155,.4);background:rgba(74,222,155,.09)}
+
+/* "it came out X ago" selector */
+.agorow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.agobtn{padding:10px 4px;border-radius:11px;font-size:12.5px;font-weight:650;color:var(--dim);
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);transition:.15s}
+.agobtn.active{background:rgba(74,222,155,.16);border-color:rgba(74,222,155,.45);color:var(--mint)}
 textarea{min-height:88px;resize:vertical;font-family:inherit}
 select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238fb0ae' stroke-width='2' fill='none'/%3E%3C/svg%3E");
   background-repeat:no-repeat;background-position:right 13px center}
@@ -205,12 +221,17 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .tog.on::after{left:24px;background:#fff}
 
 /* ---------- chart ---------- */
-.chart{display:flex;align-items:flex-end;gap:5px;height:130px;padding-top:6px;position:relative}
-.chart .goalline{position:absolute;left:0;right:0;border-top:1px dashed rgba(255,255,255,.22);font-size:0}
-.chart .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:5px;height:100%}
-.chart .b{width:100%;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,var(--mint),var(--mint-d));min-height:2px}
-.chart .b.miss{background:linear-gradient(180deg,#5d7b78,#3f5a58)}
-.chart .lb{font-size:9.5px;color:var(--faint);font-weight:600}
+.chart{display:flex;align-items:flex-end;gap:5px;height:142px;padding-top:8px;position:relative}
+.chart .goalline{position:absolute;left:0;right:0;border-top:1px dashed rgba(255,255,255,.28);font-size:0}
+.chart .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:6px;height:100%}
+.chart .b{width:100%;border-radius:6px;min-height:3px;
+  background:linear-gradient(180deg,#6ff0b4,var(--mint-d));
+  box-shadow:0 0 12px -3px rgba(74,222,155,.7);
+  animation:grow .5s cubic-bezier(.3,.9,.3,1) both}
+@keyframes grow{from{transform:scaleY(.15);opacity:.4}to{transform:none;opacity:1}}
+.chart .b{transform-origin:bottom}
+.chart .b.miss{background:linear-gradient(180deg,#527471,#37514f);box-shadow:none}
+.chart .lb{font-size:9.5px;color:var(--faint);font-weight:700;letter-spacing:.02em}
 
 /* ---------- calendar ---------- */
 .calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px}
@@ -310,11 +331,16 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
   <div id="actionOut" class="hidden">
     <button class="btn primary" onclick="putBackIn()">Put tray back in ✓</button>
-    <button class="btn sm" style="margin-top:9px" onclick="addAlarm()">⏰ Set a phone alarm for <span id="alarmAt">—</span></button>
-    <div class="tiny faint center" style="margin-top:7px;line-height:1.5">
-      The timer keeps counting even if you close this app —<br>but the alert only reaches you if you set the alarm.
+    <div class="card tight alarmcard" id="alarmCard">
+      <div class="row">
+        <div style="min-width:0">
+          <div class="small" style="font-weight:700" id="alarmState">Alarm set</div>
+          <div class="tiny faint" id="alarmHint">&nbsp;</div>
+        </div>
+        <button class="hbtn" onclick="addAlarm()" title="Add to phone calendar too">📅</button>
+      </div>
     </div>
-    <button class="btn ghost sm" style="margin-top:11px" onclick="cancelOut()">Cancel — never came out</button>
+    <button class="btn ghost sm" onclick="cancelOut()">Cancel — never came out</button>
   </div>
 
   <div class="card" style="margin-top:14px">
@@ -503,6 +529,14 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <div class="tog" id="togNotify" onclick="toggleNotify()"></div>
     </div>
     <div class="switch">
+      <div><div class="lbl">Alarm sound</div><div class="desc">Ring out loud when the time is up — works with the app in the background</div></div>
+      <div class="tog" id="togAlarm" onclick="toggleAlarm()"></div>
+    </div>
+    <label class="f" style="margin:12px 0"><span>Alarm volume</span>
+      <input type="range" id="setVol" min="0.1" max="1" step="0.1" class="range"></label>
+    <button class="btn sm" onclick="Alarm.test()">🔔 Test the alarm</button>
+    <div class="tiny faint" style="margin:8px 0 4px">If you hear nothing, check the side switch isn't on silent.</div>
+    <div class="switch" style="margin-top:8px">
       <div><div class="lbl">Keep nagging</div><div class="desc">Repeat the reminder every few minutes until the tray is back in</div></div>
       <div class="tog" id="togNag" onclick="toggleNag()"></div>
     </div>
@@ -556,8 +590,16 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="grab"></div>
     <h2>Why is it coming out?</h2>
     <div class="chips" id="outChips"></div>
-    <div style="margin-top:14px">
-      <label class="f"><span>Or set your own (minutes)</span>
+    <label class="f" style="margin-top:15px"><span>Forgot to press it? It came out…</span>
+      <div class="agorow">
+        <button type="button" class="agobtn active" onclick="setAgo(0,this)">just now</button>
+        <button type="button" class="agobtn" onclick="setAgo(5,this)">5 min ago</button>
+        <button type="button" class="agobtn" onclick="setAgo(10,this)">10 min ago</button>
+        <button type="button" class="agobtn" onclick="setAgo(20,this)">20 min ago</button>
+      </div>
+      <input type="number" id="startedAgo" class="hidden" value="0"></label>
+    <div style="margin-top:6px">
+      <label class="f"><span>Or set your own allowance (minutes)</span>
         <input type="number" id="customMins" placeholder="e.g. 45" inputmode="numeric"></label>
       <button class="btn sm" onclick="startOut('custom')">Start with custom time</button>
     </div>
@@ -588,6 +630,22 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <label class="f"><span>Started this tray on</span><input type="datetime-local" id="tStart"></label>
     <button class="btn primary" onclick="saveTrayEdit()">Save</button>
     <button class="btn ghost sm" style="margin-top:9px" onclick="closeSheet('sheetTray')">Cancel</button>
+  </div>
+</div>
+
+<div class="sheet" id="sheetSess">
+  <div class="scrim" onclick="closeSheet('sheetSess')"></div>
+  <div class="panel">
+    <div class="grab"></div>
+    <h2 id="sessTitle">Session</h2>
+    <p class="small faint" style="margin:0 0 14px">Fix the times if you pressed the button late, or forgot to press it at all.</p>
+    <label class="f"><span>Came out at</span><input type="datetime-local" id="sessOut"></label>
+    <label class="f"><span>Went back in at</span><input type="datetime-local" id="sessIn"></label>
+    <div class="tiny faint hidden" id="sessStillOut" style="margin:-6px 0 12px">Leave the second one empty if the tray is still out.</div>
+    <label class="f"><span>Allowance (minutes)</span><input type="number" id="sessRec" min="1" max="600" inputmode="numeric"></label>
+    <button class="btn primary" onclick="saveSessEdit()">Save</button>
+    <button class="btn sm danger" style="margin-top:9px" onclick="deleteSessEdit()">Delete this session</button>
+    <button class="btn ghost sm" style="margin-top:9px" onclick="closeSheet('sheetSess')">Cancel</button>
   </div>
 </div>
 
@@ -663,6 +721,8 @@ const DEFAULTS = () => ({
     nagMins: 5,
     earlyMins: 5,
     vibrate: true,
+    alarm: true,          // ring an audible alarm from inside the app
+    alarmVol: 0.7,
     presets: [
       { id: 'meal',  label: 'Meal',     emoji: '🍽️', mins: 30 },
       { id: 'snack', label: 'Snack',    emoji: '🍎', mins: 15 },
@@ -849,6 +909,8 @@ function openOutSheet() {
      </button>`).join('');
   $('outChips').innerHTML = html;
   $('customMins').value = '';
+  $('startedAgo').value = 0;
+  [...document.querySelectorAll('.agobtn')].forEach((b, i) => b.classList.toggle('active', i === 0));
   openSheet('sheetOut');
 }
 
@@ -864,12 +926,21 @@ function startOut(id) {
     rec = preset.mins; label = preset.label; emoji = preset.emoji;
   } else return;
 
-  S.sessions.push({
+  // "it actually came out a few minutes ago" — backdate the start
+  const ago = parseInt($('startedAgo').value, 10);
+  const out = Date.now() - (ago > 0 ? Math.min(ago, 720) * MIN : 0);
+
+  const sess = {
     id: uid(), tray: S.tray.number, reason: id, label, emoji,
-    rec, out: Date.now(), in: null, notifiedEarly: false, notifiedDue: false, lastNag: 0
-  });
+    rec, out, in: null, notifiedEarly: false, notifiedDue: false, lastNag: 0
+  };
+  S.sessions.push(sess);
   save(); closeSheet('sheetOut'); render();
-  toast(`Timer started — ${rec} min for ${label.toLowerCase()}`);
+
+  // this runs inside the tap that started the session, so audio is allowed
+  const armed = Alarm.arm(sessionDue(sess));
+  toast(armed ? `Timer started — alarm at ${timeStr(sessionDue(sess))}`
+              : `Timer started — ${rec} min for ${label.toLowerCase()}`);
   buzz(30);
 }
 
@@ -879,6 +950,7 @@ function putBackIn() {
   s.in = Date.now();
   const actual = s.in - s.out, rec = s.rec * MIN;
   save(); render();
+  Alarm.disarm();
   clearNotif(s.id);
   const diff = actual - rec;
   if (diff > MIN) toast(`Back in — ${dur(actual)} out, ${dur(diff)} over your ${s.rec}m allowance`);
@@ -892,13 +964,57 @@ function cancelOut() {
   if (!s) return;
   if (!confirm('Delete this out-session? It will not count against your wear time.')) return;
   S.sessions = S.sessions.filter(x => x.id !== s.id);
-  save(); clearNotif(s.id); render(); toast('Session removed');
+  save(); Alarm.disarm(); clearNotif(s.id); render(); toast('Session removed');
 }
 
 function deleteSession(id) {
   if (!confirm('Delete this session?')) return;
+  const wasOpen = S.sessions.some(x => x.id === id && !x.in);
   S.sessions = S.sessions.filter(x => x.id !== id);
+  if (wasOpen) Alarm.disarm();
   save(); render();
+}
+
+/* ---------------- fixing a session you logged late ------------------- */
+let editingSess = null;
+function openSessEdit(id) {
+  const s = S.sessions.find(x => x.id === id);
+  if (!s) return;
+  editingSess = id;
+  $('sessTitle').textContent = s.emoji + ' ' + s.label;
+  $('sessOut').value = toLocalInput(s.out);
+  $('sessIn').value = s.in ? toLocalInput(s.in) : '';
+  $('sessRec').value = s.rec;
+  $('sessStillOut').classList.toggle('hidden', !!s.in);
+  openSheet('sheetSess');
+}
+
+function saveSessEdit() {
+  const s = S.sessions.find(x => x.id === editingSess);
+  if (!s) return;
+  const out = $('sessOut').value ? new Date($('sessOut').value).getTime() : 0;
+  const back = $('sessIn').value ? new Date($('sessIn').value).getTime() : null;
+  const rec = parseInt($('sessRec').value, 10);
+  if (!out) { toast('The out time is needed'); return; }
+  if (out > Date.now()) { toast("The out time can't be in the future"); return; }
+  if (back && back < out) { toast('Back-in has to be after it came out'); return; }
+  if (back && back > Date.now()) { toast("Back-in can't be in the future"); return; }
+  if (!rec || rec < 1) { toast('Allowance must be at least 1 minute'); return; }
+
+  const wasOpen = !s.in;
+  s.out = out; s.in = back; s.rec = rec;
+  if (back) { s.notifiedDue = true; s.notifiedEarly = true; }
+  save();
+  if (wasOpen && back) Alarm.disarm();                 // it's closed now
+  else if (!back) { Alarm.disarm(true); rearmPending = true; }
+  closeSheet('sheetSess'); render();
+  toast(back ? 'Session corrected' : 'Session reopened — tap the screen to re-arm the alarm');
+}
+
+function deleteSessEdit() {
+  if (!editingSess) return;
+  closeSheet('sheetSess');
+  deleteSession(editingSess);
 }
 
 function nextTray() {
@@ -1244,6 +1360,104 @@ function deleteNote(id) {
   save(); render();
 }
 
+/* ---------------------------- the alarm ------------------------------- */
+/* An audible alarm the app rings itself. The beeps are scheduled on the Web
+   Audio clock, which lives in the audio thread — so they still sound at the
+   right moment after the phone has frozen this app's JavaScript in the
+   background. A near-silent tone holds the audio context open, because iOS
+   suspends a context that has nothing playing. Force-quitting still stops it.
+   Arming needs a user gesture (autoplay rules), which taking the tray out is. */
+
+const Alarm = {
+  ctx: null, keep: null, nodes: [], armedFor: null,
+
+  supported() { return !!(window.AudioContext || window.webkitAudioContext); },
+
+  ensure() {
+    if (!this.supported()) return null;
+    if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+    return this.ctx;
+  },
+
+  startKeepAlive() {
+    if (!this.ctx || this.keep) return;
+    const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+    o.frequency.value = 440;
+    g.gain.value = 0.0001;                       // inaudible, but counts as playing
+    o.connect(g); g.connect(this.ctx.destination);
+    o.start();
+    this.keep = o;
+  },
+
+  stopKeepAlive() {
+    if (!this.keep) return;
+    try { this.keep.stop(); } catch (e) {}
+    this.keep = null;
+  },
+
+  /** Schedule `count` two-tone beeps starting at audio-clock time `at`. */
+  burst(at, count) {
+    const ctx = this.ctx, vol = clamp(S.settings.alarmVol == null ? 0.7 : S.settings.alarmVol, 0, 1);
+    for (let i = 0; i < count; i++) {
+      const t = at + i * 0.62;
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(950, t);
+      o.frequency.setValueAtTime(700, t + 0.17);
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(vol, t + 0.02);
+      g.gain.setValueAtTime(vol, t + 0.3);
+      g.gain.linearRampToValueAtTime(0, t + 0.35);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t); o.stop(t + 0.37);
+      this.nodes.push(o);
+    }
+  },
+
+  arm(dueMs) {
+    if (!S.settings.alarm) return false;
+    const ctx = this.ensure();
+    if (!ctx) return false;
+    this.disarm(true);
+    this.startKeepAlive();
+    const wait = Math.max(0.05, (dueMs - Date.now()) / 1000);
+    const base = ctx.currentTime + wait;
+    this.burst(base, 5);
+    if (S.settings.nag) {
+      for (let r = 1; r <= 4; r++) this.burst(base + r * S.settings.nagMins * 60, 5);
+    }
+    this.armedFor = dueMs;
+    return true;
+  },
+
+  disarm(keepContext) {
+    this.nodes.forEach(n => { try { n.stop(); } catch (e) {} });
+    this.nodes = [];
+    this.armedFor = null;
+    if (!keepContext) this.stopKeepAlive();
+  },
+
+  test() {
+    const ctx = this.ensure();
+    if (!ctx) { toast('This browser has no audio support'); return; }
+    this.burst(ctx.currentTime + 0.05, 3);
+    buzz([300, 150, 300]);
+    toast('That is what the alarm sounds like');
+  }
+};
+
+/* The alarm cannot be armed without a gesture, so if the app is reopened with a
+   tray already out, arm it the first time the screen is touched. */
+let rearmPending = false;
+function rearmIfNeeded() {
+  if (!rearmPending) return;
+  const s = openSession();
+  if (s && sessionDue(s) > Date.now()) Alarm.arm(sessionDue(s));
+  rearmPending = false;
+  renderToday();
+}
+
 /* ------------------------- calendar alarm ----------------------------- */
 /* Phones suspend web apps in the background, so the in-app reminder can only
    fire while the app is open. A calendar event with an alarm is handed to the
@@ -1304,6 +1518,19 @@ async function toggleNotify() {
   save(); render();
 }
 function toggleNag() { S.settings.nag = !S.settings.nag; save(); render(); }
+function toggleAlarm() {
+  S.settings.alarm = !S.settings.alarm;
+  save();
+  const s = openSession();
+  if (S.settings.alarm && s && sessionDue(s) > Date.now()) Alarm.arm(sessionDue(s));
+  if (!S.settings.alarm) Alarm.disarm();
+  render();
+  toast(S.settings.alarm ? 'Alarm on' : 'Alarm off');
+}
+function setAgo(mins, btn) {
+  $('startedAgo').value = mins;
+  [...btn.parentNode.children].forEach(b => b.classList.toggle('active', b === btn));
+}
 function toggleVib() { S.settings.vibrate = !S.settings.vibrate; save(); render(); }
 
 function buzz(pattern) {
@@ -1424,8 +1651,24 @@ function renderToday() {
       ? `<span class="warn">${dur(-left)} over</span> — recommended ${s.rec} min, back in by ${timeStr(due)}`
       : `${dur(left, { zero: 'under a minute' })} left · put back in by ${timeStr(due)}`;
     const pct = clamp(outFor / (s.rec * MIN) * 100, 0, 100);
-    setRing(pct, over ? 'red' : (pct > 75 ? 'amber' : ''));
-    $('alarmAt').textContent = timeStr(due);
+    setRing(pct, over ? 'red' : 'amber');   // out is always amber, red once over
+
+    const armed = Alarm.armedFor === due;
+    const card = $('alarmCard');
+    card.classList.toggle('armed', armed);
+    if (!S.settings.alarm) {
+      $('alarmState').textContent = '🔕 Alarm is off';
+      $('alarmHint').textContent = 'Turn it on in Settings, or add this to your calendar →';
+    } else if (armed) {
+      $('alarmState').textContent = '🔔 Alarm set for ' + timeStr(due);
+      $('alarmHint').textContent = 'Rings even if you switch apps — but not if you force-quit';
+    } else if (over) {
+      $('alarmState').textContent = '⏰ Time is up';
+      $('alarmHint').textContent = 'Put the tray back in';
+    } else {
+      $('alarmState').textContent = '🔔 Tap the screen to arm the alarm';
+      $('alarmHint').textContent = 'Phones only allow sound after a tap';
+    }
     $('heroBarL').textContent = 'Out since ' + timeStr(s.out);
     $('heroBarR').textContent = s.rec + ' min allowance';
     $('actionIn').classList.add('hidden');
@@ -1481,11 +1724,11 @@ function renderToday() {
       : `<span class="tag">on target</span>`;
     return `<div class="item">
       <div class="ico">${x.emoji}</div>
-      <div class="body">
+      <div class="body" onclick="openSessEdit('${x.id}')">
         <div class="t">${esc(x.label)} · ${dur(actual, { zero: '<1m' })} ${tag}</div>
         <div class="s">${timeStr(x.out)} → ${x.in ? timeStr(x.in) : 'now'} · allowance ${x.rec}m</div>
       </div>
-      <button class="x" onclick="deleteSession('${x.id}')">✕</button>
+      <button class="x" onclick="openSessEdit('${x.id}')">✎</button>
     </div>`;
   }).join('') : '<div class="empty"><span class="e">✨</span>Tray hasn\'t come out yet today.</div>';
 
@@ -1695,6 +1938,8 @@ function renderSettings() {
   $('togNotify').classList.toggle('on', !!s.notify);
   $('togNag').classList.toggle('on', !!s.nag);
   $('togVib').classList.toggle('on', !!s.vibrate);
+  $('togAlarm').classList.toggle('on', !!s.alarm);
+  set('setVol', s.alarmVol == null ? 0.7 : s.alarmVol);
   $('permTxt').textContent = !notifySupported() ? 'Not supported in this browser'
     : Notification.permission === 'denied' ? 'Blocked — re-enable in browser settings'
     : 'Nudge me when a tray is due back in';
@@ -1738,6 +1983,10 @@ function bindSettings() {
   };
   num('setTotal', 'totalTrays', 1, 200); num('setDays', 'daysPerTray', 1, 60);
   num('setGoal', 'goalHours', 1, 24, true); num('setNag', 'nagMins', 1, 60); num('setEarly', 'earlyMins', 0, 30);
+  $('setVol').addEventListener('change', () => {
+    S.settings.alarmVol = parseFloat($('setVol').value);
+    save(); Alarm.test();
+  });
 }
 
 /* ---------------------------- data in/out ----------------------------- */
@@ -1814,6 +2063,12 @@ if ('serviceWorker' in navigator) {
 snapshot();          // copy today's data aside BEFORE anything can modify it
 S = load();
 bindSettings();
+
+// a tray already out when the app opens: arm the alarm on the first touch,
+// since browsers refuse to start audio without one
+if (S.sessions.some(x => !x.in)) rearmPending = true;
+['pointerdown', 'touchstart', 'keydown'].forEach(ev =>
+  document.addEventListener(ev, rearmIfNeeded, { passive: true }));
 ['bfCurrent', 'bfDays', 'bfAnchor', 'bfDate'].forEach(id =>
   $(id).addEventListener('input', previewBackfill));
 render();
