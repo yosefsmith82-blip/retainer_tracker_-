@@ -18,7 +18,78 @@
   --blue:#60a5fa; --violet:#c084fc;
   --r:20px; --shadow:0 10px 30px -8px rgba(0,0,0,.55);
   --safe-b:env(safe-area-inset-bottom,0px);
+  --surf:rgba(255,255,255,.05); --surf2:rgba(255,255,255,.09);
+  --hair:rgba(255,255,255,.09); --hair2:rgba(255,255,255,.06);
+  --sink:rgba(0,0,0,.25);
 }
+
+/* ---------------------------- light theme ---------------------------- */
+:root[data-theme="light"]{
+  --bg:#eef3f2; --bg2:#ffffff; --card:#ffffff; --card2:#f1f6f5;
+  --line:#d3e0de; --text:#0d2b2e; --dim:#4c6d6d; --faint:#7a9695;
+  --mint:#0f9d6b; --mint-d:#0b7a53; --amber:#c07c12; --red:#d43f5c;
+  --blue:#2563eb; --violet:#8b45d0;
+  --shadow:0 8px 22px -10px rgba(16,50,54,.28);
+  --surf:rgba(13,43,46,.045); --surf2:rgba(13,43,46,.08);
+  --hair:rgba(13,43,46,.1); --hair2:rgba(13,43,46,.07);
+  --sink:rgba(13,43,46,.05);
+}
+:root[data-theme="light"] body{
+  background-image:
+    radial-gradient(120% 65% at 50% -10%, rgba(15,157,107,.1), transparent 62%),
+    radial-gradient(90% 45% at 100% 100%, rgba(37,99,235,.05), transparent 70%);
+}
+:root[data-theme="light"] header{background:rgba(238,243,242,.82)}
+:root[data-theme="light"] nav{background:rgba(255,255,255,.9)}
+:root[data-theme="light"] .card{
+  background-image:none;background-color:var(--card);border-color:var(--line)}
+:root[data-theme="light"] .hero.in{background-color:#dff5ea;background-image:linear-gradient(170deg,rgba(15,157,107,.16),transparent 60%)}
+:root[data-theme="light"] .hero.out{background-color:#fdf0d8;background-image:linear-gradient(170deg,rgba(192,124,18,.18),transparent 60%)}
+:root[data-theme="light"] .hero.over{background-color:#fde4e8;background-image:linear-gradient(170deg,rgba(212,63,92,.18),transparent 60%)}
+:root[data-theme="light"] .hero::after{background:none}
+:root[data-theme="light"] .pill{background:rgba(255,255,255,.75);border-color:var(--line)}
+:root[data-theme="light"] .ring .track{stroke:rgba(13,43,46,.1)}
+:root[data-theme="light"] .btn{background:var(--card2);border-color:var(--line);color:var(--text)}
+:root[data-theme="light"] .btn.primary{
+  background:linear-gradient(140deg,var(--mint),var(--mint-d));color:#fff;
+  box-shadow:0 6px 16px -8px rgba(15,157,107,.8)}
+:root[data-theme="light"] .btn.warn{background:linear-gradient(140deg,#f0ab3a,#d4870f);color:#fff}
+:root[data-theme="light"] .btn.danger{background:rgba(212,63,92,.08);color:#a8253f}
+:root[data-theme="light"] .btn.ghost{background:transparent;color:var(--dim)}
+:root[data-theme="light"] .hbtn{background:var(--card2);border-color:var(--line)}
+:root[data-theme="light"] .chip,
+:root[data-theme="light"] .stat,
+:root[data-theme="light"] .agobtn,
+:root[data-theme="light"] .painbtn,
+:root[data-theme="light"] .elastic,
+:root[data-theme="light"] .item .ico,
+:root[data-theme="light"] .cal .cell{background:var(--card2);border-color:var(--line)}
+:root[data-theme="light"] .cal .cell.pad{background:transparent;border-color:transparent}
+:root[data-theme="light"] .cal .cell.future{background:rgba(13,43,46,.03)}
+:root[data-theme="light"] .cal .cell.hit{background:rgba(15,157,107,.14)}
+:root[data-theme="light"] input,
+:root[data-theme="light"] select,
+:root[data-theme="light"] textarea{background:#fff;border-color:var(--line);color:var(--text)}
+:root[data-theme="light"] .bar{background:rgba(13,43,46,.1);box-shadow:none}
+:root[data-theme="light"] .range::-webkit-slider-runnable-track{background:rgba(13,43,46,.15)}
+:root[data-theme="light"] .range::-moz-range-track{background:rgba(13,43,46,.15)}
+:root[data-theme="light"] .item{border-bottom-color:var(--line)}
+:root[data-theme="light"] .switch{border-bottom-color:var(--line)}
+/* must not out-rank .tog.on, or every switched-on toggle reads as off */
+:root[data-theme="light"] .tog:not(.on){background:rgba(13,43,46,.12);border-color:var(--line)}
+:root[data-theme="light"] .tog.on{background:var(--mint-d);border-color:var(--mint)}
+:root[data-theme="light"] .toast{background:#0d2b2e;color:#eaf6f4;border-color:#0d2b2e}
+:root[data-theme="light"] .sheet .panel{box-shadow:0 -20px 50px -18px rgba(16,50,54,.4)}
+:root[data-theme="light"] .grab{background:var(--line)}
+:root[data-theme="light"] .chart .goalline{border-top-color:rgba(13,43,46,.25)}
+:root[data-theme="light"] .chart .b.miss{background:linear-gradient(180deg,#a8c0be,#8ba8a6)}
+:root[data-theme="light"] .alarmcard{background:var(--card2)}
+:root[data-theme="light"] .alarmcard.armed{background:rgba(15,157,107,.1);border-color:rgba(15,157,107,.35)}
+:root[data-theme="light"] nav button.active{background:rgba(15,157,107,.12)}
+:root[data-theme="light"] .agobtn.active,
+:root[data-theme="light"] .painbtn.on{background:rgba(15,157,107,.14);border-color:rgba(15,157,107,.4)}
+:root[data-theme="light"] .tag.grey{background:rgba(13,43,46,.08);color:var(--dim)}
+:root[data-theme="light"] header .logo{box-shadow:0 3px 12px -3px rgba(15,157,107,.5)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 body{
@@ -264,6 +335,29 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .preview div{padding:3px 0;color:var(--dim)}
 .preview div b{color:var(--text);font-weight:650}
 
+/* ---------- comfort / elastics / links ---------- */
+.painrow{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}
+.painbtn{padding:11px 3px;border-radius:14px;background:var(--surf);border:1px solid var(--hair);
+  display:flex;flex-direction:column;align-items:center;gap:4px;transition:.15s}
+.painbtn .pe{font-size:22px;line-height:1}
+.painbtn .pt{font-size:10.5px;font-weight:650;color:var(--faint)}
+.painbtn.on{background:rgba(74,222,155,.16);border-color:rgba(74,222,155,.5)}
+.painbtn.on .pt{color:var(--mint)}
+.painbtn:active{transform:scale(.93)}
+.chart.pain .b{background:linear-gradient(180deg,#6ff0b4,var(--mint-d));box-shadow:none}
+.chart.pain .b.mid{background:linear-gradient(180deg,var(--amber),#c9821f)}
+.chart.pain .b.bad{background:linear-gradient(180deg,var(--red),#c5364f)}
+
+.elastic{background:var(--surf);border:1px solid var(--hair);border-radius:15px;padding:14px}
+.elastic .eltop{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.elastic .elmeta{font-size:13.5px;color:var(--dim);margin-top:3px;font-weight:600}
+.elastic .elpat{display:inline-block;margin-top:9px;font-size:12px;font-weight:700;padding:5px 11px;
+  border-radius:99px;background:rgba(96,165,250,.15);color:var(--blue)}
+
+.linkrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--hair2)}
+.linkrow:last-child{border-bottom:none}
+.linkurl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 /* ---------- sheet ---------- */
 .sheet{position:fixed;inset:0;z-index:60;display:none}
 .sheet.open{display:block}
@@ -411,6 +505,28 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 
   <div class="card">
+    <h2>How does this tray feel?</h2>
+    <div class="painrow" id="painRow"></div>
+    <div class="small faint" style="margin-top:11px" id="painMsg"></div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="margin-bottom:12px">
+      <h2 style="margin:0">Elastics</h2>
+      <button class="btn sm" style="width:auto;padding:8px 13px;flex:none" onclick="openElastic()" id="elasticBtn">Set up</button>
+    </div>
+    <div id="elasticBody"></div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="margin-bottom:12px">
+      <h2 style="margin:0">Lost or broken trays</h2>
+      <button class="btn sm" style="width:auto;padding:8px 13px;flex:none" onclick="openIncident()">Report</button>
+    </div>
+    <div id="incidentList"></div>
+  </div>
+
+  <div class="card">
     <div class="row" style="margin-bottom:12px">
       <h2 style="margin:0">Tray history</h2>
       <span class="tiny faint">tap to edit</span>
@@ -505,6 +621,14 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="small faint" style="margin-top:12px" id="driftMsg"></div>
   </div>
   <div class="card">
+    <h2>This week vs last</h2>
+    <div id="weekly"></div>
+  </div>
+  <div class="card">
+    <h2>Comfort over time</h2>
+    <div id="painChart"></div>
+  </div>
+  <div class="card">
     <h2>By reason (last 7 days)</h2>
     <div id="reasonBreak"></div>
   </div>
@@ -513,6 +637,16 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <!-- ============ SETTINGS ============ -->
 <section class="view" id="v-settings">
   <div class="card">
+    <h2>Appearance</h2>
+    <label class="f" style="margin:0"><span>Theme</span>
+      <select id="setTheme" onchange="pickTheme(this.value)">
+        <option value="dark">Dark</option>
+        <option value="light">Light</option>
+        <option value="auto">Match my phone</option>
+      </select></label>
+  </div>
+
+  <div class="card">
     <h2>Treatment</h2>
     <div class="grid2">
       <label class="f"><span>Total trays</span><input type="number" id="setTotal" min="1" max="200" inputmode="numeric"></label>
@@ -520,6 +654,20 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
     <label class="f"><span>Daily wear goal (hours)</span><input type="number" id="setGoal" min="1" max="24" step="0.5" inputmode="decimal"></label>
     <div class="tiny faint">Most aligner plans ask for 20–22 hours a day. Follow whatever your orthodontist told you.</div>
+    <div class="switch" style="margin-top:12px">
+      <div><div class="lbl">Change trays by wear, not days</div>
+        <div class="desc">A tray is due once it has had days × goal hours of actual wear. Wear it less and the date moves out.</div></div>
+      <div class="tog" id="togWear" onclick="toggleWearAdjust()"></div>
+    </div>
+    <div class="tiny faint" style="margin-top:8px">Check with your orthodontist before changing how you advance trays.</div>
+  </div>
+
+  <div class="card">
+    <h2>Hands-free with Siri</h2>
+    <div class="small faint" style="margin-bottom:12px">Make an iPhone shortcut that opens one of these links, name it
+      something like “Tray out”, and you can say it to Siri instead of unlocking your phone.</div>
+    <div id="siriLinks"></div>
+    <div class="tiny faint" style="margin-top:10px">Shortcuts app → + → Web → Open URLs → paste → name it.</div>
   </div>
 
   <div class="card">
@@ -532,6 +680,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <div><div class="lbl">Alarm sound</div><div class="desc">Ring out loud when the time is up — works with the app in the background</div></div>
       <div class="tog" id="togAlarm" onclick="toggleAlarm()"></div>
     </div>
+    <label class="f" style="margin:12px 0 10px"><span>Alarm sound</span>
+      <select id="setSound" onchange="pickSound(this.value)">
+        <option value="beep">Beep — two tones</option>
+        <option value="chime">Chime — soft and rising</option>
+        <option value="bell">Bell — single ring</option>
+        <option value="urgent">Urgent — hard to ignore</option>
+      </select></label>
     <label class="f" style="margin:12px 0"><span>Alarm volume</span>
       <input type="range" id="setVol" min="0.1" max="1" step="0.1" class="range"></label>
     <button class="btn sm" onclick="Alarm.test()">🔔 Test the alarm</button>
@@ -633,6 +788,73 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 </div>
 
+<div class="sheet" id="sheetElastic">
+  <div class="scrim" onclick="closeSheet('sheetElastic')"></div>
+  <div class="panel">
+    <div class="grab"></div>
+    <h2>Your elastics</h2>
+    <p class="small faint" style="margin:0 0 14px">Whatever your orthodontist wrote on the bag — size, strength and where they hook.</p>
+    <label class="f"><span>Name / animal</span>
+      <input id="elType" placeholder="Chipmunk, Fox, Ram, Parrot…" list="elNames">
+      <datalist id="elNames">
+        <option>Chipmunk</option><option>Fox</option><option>Ram</option><option>Parrot</option>
+        <option>Bear</option><option>Kangaroo</option><option>Impala</option><option>Ostrich</option>
+      </datalist></label>
+    <div class="grid2">
+      <label class="f"><span>Size</span>
+        <select id="elSize">
+          <option value="">—</option>
+          <option>1/8"</option><option>3/16"</option><option>1/4"</option><option>5/16"</option><option>3/8"</option>
+        </select></label>
+      <label class="f"><span>Strength</span>
+        <select id="elForce">
+          <option value="">—</option>
+          <option>2 oz (light)</option><option>3.5 oz (medium)</option><option>4.5 oz (heavy)</option><option>6 oz (extra heavy)</option>
+        </select></label>
+    </div>
+    <label class="f"><span>How you wear them</span>
+      <select id="elPattern">
+        <option value="">—</option>
+        <option>Class II — both sides</option><option>Class II — left only</option><option>Class II — right only</option>
+        <option>Class III — both sides</option><option>Triangle — both sides</option>
+        <option>Triangle — left</option><option>Triangle — right</option>
+        <option>Front / box</option><option>Other</option>
+      </select></label>
+    <label class="f"><span>Notes</span><input id="elNote" placeholder="Full time except eating, change 3× a day…"></label>
+    <button class="btn primary" onclick="saveElastic()">Save</button>
+    <button class="btn sm danger" style="margin-top:9px" id="elStop" onclick="stopElastic()">I've stopped wearing them</button>
+    <button class="btn ghost sm" style="margin-top:9px" onclick="closeSheet('sheetElastic')">Cancel</button>
+  </div>
+</div>
+
+<div class="sheet" id="sheetIncident">
+  <div class="scrim" onclick="closeSheet('sheetIncident')"></div>
+  <div class="panel">
+    <div class="grab"></div>
+    <h2>Lost or broken tray</h2>
+    <label class="f"><span>Which tray</span><input type="number" id="incTray" min="1" inputmode="numeric"></label>
+    <label class="f"><span>What happened</span>
+      <select id="incType">
+        <option value="lost">Lost it</option>
+        <option value="cracked">Cracked or broke</option>
+        <option value="fit">Doesn't fit properly</option>
+        <option value="left">Left it somewhere / thrown out</option>
+        <option value="other">Something else</option>
+      </select></label>
+    <label class="f"><span>What you did</span>
+      <select id="incAction">
+        <option value="prev">Went back to the previous tray</option>
+        <option value="next">Moved on to the next tray</option>
+        <option value="carry">Kept wearing it anyway</option>
+        <option value="ortho">Called the orthodontist</option>
+        <option value="wait">Waiting for a replacement</option>
+      </select></label>
+    <label class="f"><span>Notes</span><textarea id="incNote" placeholder="Wrapped it in a napkin at lunch…"></textarea></label>
+    <button class="btn primary" onclick="saveIncident()">Save</button>
+    <button class="btn ghost sm" style="margin-top:9px" onclick="closeSheet('sheetIncident')">Cancel</button>
+  </div>
+</div>
+
 <div class="sheet" id="sheetSess">
   <div class="scrim" onclick="closeSheet('sheetSess')"></div>
   <div class="panel">
@@ -723,6 +945,9 @@ const DEFAULTS = () => ({
     vibrate: true,
     alarm: true,          // ring an audible alarm from inside the app
     alarmVol: 0.7,
+    alarmSound: 'beep',
+    theme: 'dark',        // dark | light | auto
+    wearAdjust: false,    // set the tray change date by wear hours, not calendar days
     presets: [
       { id: 'meal',  label: 'Meal',     emoji: '🍽️', mins: 30 },
       { id: 'snack', label: 'Snack',    emoji: '🍎', mins: 15 },
@@ -736,7 +961,10 @@ const DEFAULTS = () => ({
   trayHistory: [],
   sessions: [],
   appointments: [],
-  notes: []
+  notes: [],
+  pains: [],        // {id, at, level 1-5, tray}
+  incidents: [],    // {id, at, tray, type, action, note} — lost/cracked trays
+  elastics: { wearing: false, type: '', size: '', force: '', pattern: '', startedAt: null, changedAt: null, history: [] }
 });
 
 let S;   // initialised at the bottom, once the helpers below exist
@@ -755,6 +983,11 @@ function load() {
     const merged = Object.assign(base, d, { settings: Object.assign(base.settings, d.settings || {}) });
     // older saves have no per-tray id; history rows need one to be editable
     merged.trayHistory.forEach(h => { if (!h.id) h.id = uid(); });
+    // fields added after a save was written: keep the defaults rather than undefined
+    if (!Array.isArray(merged.pains)) merged.pains = [];
+    if (!Array.isArray(merged.incidents)) merged.incidents = [];
+    if (!merged.elastics || typeof merged.elastics !== 'object') merged.elastics = base.elastics;
+    if (!Array.isArray(merged.elastics.history)) merged.elastics.history = [];
     // saves from before trackingSince existed: derive it from the oldest thing on record
     if (!d.trackingSince) {
       merged.trackingSince = Math.min(
@@ -896,7 +1129,23 @@ function trayStats() {
   const days = Math.max(1, measured / DAY);
   return { elapsed, out, wear, avg: wear / days, days, measured, partial: measuredFrom > from };
 }
-const trayDueAt = () => S.tray.startedAt + S.settings.daysPerTray * DAY;
+const trayCalendarDue = () => S.tray.startedAt + S.settings.daysPerTray * DAY;
+
+/* A tray is meant to get daysPerTray × goalHours of actual wear. Wear less than
+   that and the calendar date arrives before the tray has done its work, so this
+   projects the date it will have, at the rate you are actually wearing it. */
+function trayWearDue() {
+  const st = trayStats();
+  const need = S.settings.daysPerTray * S.settings.goalHours * HOUR;
+  const short = need - st.wear;
+  if (short <= 0) return Date.now();                      // already earned it
+  // rate = fraction of real time the tray is in; fall back to the goal rate
+  const rate = st.measured > 2 * HOUR ? st.wear / st.measured : S.settings.goalHours / 24;
+  if (rate <= 0.01) return trayCalendarDue() + 30 * DAY;   // barely worn — don't project silly numbers
+  return Date.now() + short / rate;
+}
+
+const trayDueAt = () => S.settings.wearAdjust ? trayWearDue() : trayCalendarDue();
 const trayDayNum = () => clamp(Math.floor((Date.now() - S.tray.startedAt) / DAY) + 1, 1, 999);
 /** Recommended end time of an out-session. */
 const sessionDue = s => s.out + s.rec * MIN;
@@ -1315,6 +1564,96 @@ function openDay(ds) {
   openSheet('sheetDay');
 }
 
+/* ------------------------- comfort / pain ----------------------------- */
+const PAIN = [
+  { l: 1, e: '😀', t: 'Fine' }, { l: 2, e: '🙂', t: 'Slight' }, { l: 3, e: '😐', t: 'Achy' },
+  { l: 4, e: '😖', t: 'Sore' }, { l: 5, e: '😣', t: 'Rough' }
+];
+
+function logPain(level) {
+  const today = dayStart(Date.now());
+  // one entry per day — tapping again corrects today's
+  const existing = S.pains.find(p => dayStart(p.at) === today);
+  const trayDay = clamp(Math.floor((Date.now() - S.tray.startedAt) / DAY) + 1, 1, 99);
+  if (existing) Object.assign(existing, { level, at: Date.now(), tray: S.tray.number, trayDay });
+  else S.pains.push({ id: uid(), at: Date.now(), level, tray: S.tray.number, trayDay });
+  save(); render();
+  toast('Logged — ' + PAIN[level - 1].t.toLowerCase());
+  buzz(20);
+}
+
+/* -------------------------- elastics ---------------------------------- */
+function openElastic() {
+  const e = S.elastics;
+  $('elType').value = e.type || '';
+  $('elSize').value = e.size || '';
+  $('elForce').value = e.force || '';
+  $('elPattern').value = e.pattern || '';
+  $('elNote').value = e.note || '';
+  $('elStop').style.display = e.wearing ? 'block' : 'none';
+  openSheet('sheetElastic');
+}
+
+function elasticLabel(e) {
+  return [e.type, e.size, e.force, e.pattern].filter(Boolean).join(' · ') || 'Elastics';
+}
+
+function saveElastic() {
+  const e = S.elastics;
+  const next = {
+    type: $('elType').value.trim(), size: $('elSize').value, force: $('elForce').value,
+    pattern: $('elPattern').value, note: $('elNote').value.trim()
+  };
+  if (!next.type && !next.size && !next.force && !next.pattern) {
+    toast('Fill in at least one detail'); return;
+  }
+  const changed = e.wearing && elasticLabel(next) !== elasticLabel(e);
+  if (changed) e.history.push({ id: uid(), label: elasticLabel(e), from: e.startedAt, to: Date.now() });
+  Object.assign(e, next);
+  if (!e.wearing || changed) e.startedAt = Date.now();
+  e.wearing = true;
+  save(); closeSheet('sheetElastic'); render();
+  toast(changed ? 'Switched to ' + elasticLabel(e) : 'Elastics saved');
+}
+
+function stopElastic() {
+  const e = S.elastics;
+  if (!confirm('Mark that you have stopped wearing elastics?')) return;
+  if (e.type || e.size) e.history.push({ id: uid(), label: elasticLabel(e), from: e.startedAt, to: Date.now() });
+  e.wearing = false; e.startedAt = null;
+  save(); closeSheet('sheetElastic'); render(); toast('Elastics stopped');
+}
+
+/* --------------------- lost / broken trays ---------------------------- */
+const INC_TYPE = { lost: ['Lost', '🔍'], cracked: ['Cracked', '💔'], fit: ["Doesn't fit", '😬'],
+                   left: ['Thrown out', '🗑️'], other: ['Problem', '⚠️'] };
+const INC_ACTION = { prev: 'went back a tray', next: 'moved to the next tray',
+                     carry: 'kept wearing it', ortho: 'called the orthodontist', wait: 'waiting for a replacement' };
+
+function openIncident() {
+  $('incTray').value = S.tray.number;
+  $('incType').value = 'lost';
+  $('incAction').value = 'prev';
+  $('incNote').value = '';
+  openSheet('sheetIncident');
+}
+
+function saveIncident() {
+  const tray = parseInt($('incTray').value, 10);
+  if (!tray || tray < 1) { toast('Which tray was it?'); return; }
+  S.incidents.unshift({
+    id: uid(), at: Date.now(), tray, type: $('incType').value,
+    action: $('incAction').value, note: $('incNote').value.trim()
+  });
+  save(); closeSheet('sheetIncident'); render(); toast('Logged — worth mentioning at your next visit');
+}
+
+function deleteIncident(id) {
+  if (!confirm('Delete this entry?')) return;
+  S.incidents = S.incidents.filter(i => i.id !== id);
+  save(); render();
+}
+
 /* --------------------------- appointments ----------------------------- */
 let editingAppt = null;
 function openApptSheet(id) {
@@ -1396,22 +1735,42 @@ const Alarm = {
     this.keep = null;
   },
 
-  /** Schedule `count` two-tone beeps starting at audio-clock time `at`. */
+  /** One note: type, start, length, frequency sweep and envelope. */
+  note(t, len, f0, f1, vol, wave, decay) {
+    const ctx = this.ctx;
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = wave || 'sine';
+    o.frequency.setValueAtTime(f0, t);
+    if (f1 && f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + len);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.015);
+    if (decay) g.gain.exponentialRampToValueAtTime(0.0008, t + len);
+    else { g.gain.setValueAtTime(vol, t + len - 0.05); g.gain.linearRampToValueAtTime(0, t + len); }
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t); o.stop(t + len + 0.02);
+    this.nodes.push(o);
+  },
+
+  /** Schedule `count` rings of the chosen sound, starting at audio-clock time `at`. */
   burst(at, count) {
-    const ctx = this.ctx, vol = clamp(S.settings.alarmVol == null ? 0.7 : S.settings.alarmVol, 0, 1);
+    const vol = clamp(S.settings.alarmVol == null ? 0.7 : S.settings.alarmVol, 0, 1);
+    const sound = S.settings.alarmSound || 'beep';
     for (let i = 0; i < count; i++) {
-      const t = at + i * 0.62;
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = 'sine';
-      o.frequency.setValueAtTime(950, t);
-      o.frequency.setValueAtTime(700, t + 0.17);
-      g.gain.setValueAtTime(0, t);
-      g.gain.linearRampToValueAtTime(vol, t + 0.02);
-      g.gain.setValueAtTime(vol, t + 0.3);
-      g.gain.linearRampToValueAtTime(0, t + 0.35);
-      o.connect(g); g.connect(ctx.destination);
-      o.start(t); o.stop(t + 0.37);
-      this.nodes.push(o);
+      const t = at + i * (sound === 'urgent' ? 0.42 : 0.75);
+      if (sound === 'chime') {
+        this.note(t, 0.3, 660, 660, vol * 0.85, 'triangle', true);
+        this.note(t + 0.16, 0.3, 880, 880, vol * 0.85, 'triangle', true);
+        this.note(t + 0.32, 0.5, 1175, 1175, vol * 0.8, 'triangle', true);
+      } else if (sound === 'bell') {
+        this.note(t, 1.1, 830, 830, vol, 'sine', true);
+        this.note(t, 1.1, 2075, 2075, vol * 0.3, 'sine', true);   // harmonic gives it the ring
+      } else if (sound === 'urgent') {
+        this.note(t, 0.13, 1200, 1200, vol, 'square');
+        this.note(t + 0.16, 0.13, 1600, 1600, vol, 'square');
+      } else {
+        this.note(t, 0.17, 950, 950, vol, 'sine');
+        this.note(t + 0.18, 0.17, 700, 700, vol, 'sine');
+      }
     }
   },
 
@@ -1518,6 +1877,30 @@ async function toggleNotify() {
   save(); render();
 }
 function toggleNag() { S.settings.nag = !S.settings.nag; save(); render(); }
+/* ----------------------------- theme ---------------------------------- */
+function applyTheme() {
+  const t = S.settings.theme || 'dark';
+  const dark = t === 'dark' || (t === 'auto' &&
+    !(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches));
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', dark ? '#08161a' : '#eef3f2');
+}
+function pickTheme(v) { S.settings.theme = v; save(); applyTheme(); toast('Theme: ' + v); }
+if (window.matchMedia) {
+  const mq = window.matchMedia('(prefers-color-scheme: light)');
+  const onChange = () => { if (S && S.settings.theme === 'auto') applyTheme(); };
+  mq.addEventListener ? mq.addEventListener('change', onChange) : mq.addListener(onChange);
+}
+
+function pickSound(v) { S.settings.alarmSound = v; save(); Alarm.test(); }
+function toggleWearAdjust() {
+  S.settings.wearAdjust = !S.settings.wearAdjust;
+  S.tray.notified = false;                 // the due date moved, so let it warn again
+  save(); render();
+  toast(S.settings.wearAdjust ? 'Tray changes now follow your wear' : 'Tray changes follow the calendar');
+}
+
 function toggleAlarm() {
   S.settings.alarm = !S.settings.alarm;
   save();
@@ -1770,6 +2153,12 @@ function renderTrays() {
   let msg;
   if (now >= due) msg = `<span class="tag red">Due now</span> You've been on tray ${S.tray.number} for ${dur(st.elapsed)}.`;
   else msg = `<span class="tag blue">${relDay(due)}</span> Change to tray ${S.tray.number + 1} on ${dateStr(due)}, ${timeStr(due)}.`;
+  if (set.wearAdjust) {
+    const cal = trayCalendarDue(), diff = due - cal;
+    msg += diff > HOUR
+      ? ` That's ${dur(diff)} past the calendar date, to make up the wear you've missed.`
+      : ' Your wear is on track with the calendar.';
+  }
   // don't quote an average off a few minutes of measured time (e.g. right after a backfill)
   if (st.measured < 2 * HOUR) {
     msg += ' Not enough tracked time yet for a daily average — it\'ll fill in as you wear it.';
@@ -1780,6 +2169,8 @@ function renderTrays() {
     if (st.partial) msg += ' (Measured from when you started tracking.)';
   }
   $('trayDueMsg').innerHTML = msg;
+
+  renderPain(); renderElastic(); renderIncidents();
 
   const hist = S.trayHistory.slice().sort((a, b) => b.startedAt - a.startedAt);
   $('trayHistory').innerHTML = hist.length ? hist.map(h => {
@@ -1807,6 +2198,68 @@ function renderTrays() {
     </div>`;
   }).join('') : `<div class="empty"><span class="e">🦷</span>No trays on record yet.<br>
       Already partway through? Tap <b>Add past trays</b>.</div>`;
+}
+
+/* -- comfort, elastics, incidents (all on the Trays screen) -- */
+function renderPain() {
+  const today = dayStart(Date.now());
+  const todays = S.pains.find(p => dayStart(p.at) === today);
+  $('painRow').innerHTML = PAIN.map(p =>
+    `<button class="painbtn ${todays && todays.level === p.l ? 'on' : ''}" onclick="logPain(${p.l})">
+       <span class="pe">${p.e}</span><span class="pt">${p.t}</span></button>`).join('');
+
+  const thisTray = S.pains.filter(p => p.tray === S.tray.number);
+  if (!S.pains.length) {
+    $('painMsg').textContent = 'Tap one each day and you\'ll see how each new tray settles down.';
+  } else if (thisTray.length) {
+    const avg = thisTray.reduce((a, p) => a + p.level, 0) / thisTray.length;
+    const first = thisTray.slice().sort((a, b) => a.at - b.at)[0];
+    $('painMsg').innerHTML = `Tray ${S.tray.number}: <b>${avg.toFixed(1)} of 5</b> across ${thisTray.length} day${thisTray.length === 1 ? '' : 's'}` +
+      (first.level >= 4 ? ' — it started rough, which is normal for the first day or two.' : '.');
+  } else {
+    $('painMsg').textContent = 'Nothing logged for tray ' + S.tray.number + ' yet.';
+  }
+}
+
+function renderElastic() {
+  const e = S.elastics;
+  $('elasticBtn').textContent = e.wearing ? 'Change' : 'Set up';
+  if (!e.wearing) {
+    $('elasticBody').innerHTML = e.history.length
+      ? `<div class="empty small"><span class="e">🎯</span>Not wearing elastics right now.<br>
+         <span class="tiny">${e.history.length} earlier set${e.history.length === 1 ? '' : 's'} on record.</span></div>`
+      : '<div class="empty small"><span class="e">🎯</span>Not wearing elastics.<br><span class="tiny">Tap Set up if your orthodontist gives you some.</span></div>';
+    return;
+  }
+  const days = e.startedAt ? Math.floor((Date.now() - e.startedAt) / DAY) : 0;
+  let html = `<div class="elastic">
+      <div class="eltop">${esc(e.type || 'Elastics')}</div>
+      <div class="elmeta">${[e.size, e.force].filter(Boolean).map(esc).join(' · ') || 'size not set'}</div>
+      ${e.pattern ? `<div class="elpat">${esc(e.pattern)}</div>` : ''}
+      <div class="tiny faint" style="margin-top:9px">On these since ${dateStr(e.startedAt)}${days ? ' · ' + days + ' day' + (days === 1 ? '' : 's') : ''}</div>
+      ${e.note ? `<div class="small" style="margin-top:8px;color:var(--dim)">${esc(e.note)}</div>` : ''}
+    </div>`;
+  if (e.history.length) {
+    html += '<div class="tiny faint" style="margin-top:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em">Before this</div>';
+    html += e.history.slice().reverse().slice(0, 4).map(h =>
+      `<div class="item"><div class="ico">🎯</div><div class="body">
+        <div class="t" style="font-size:13.5px">${esc(h.label)}</div>
+        <div class="s">${h.from ? dateStr(h.from) + ' → ' : ''}${dateStr(h.to)}</div>
+      </div></div>`).join('');
+  }
+  $('elasticBody').innerHTML = html;
+}
+
+function renderIncidents() {
+  const list = S.incidents;
+  $('incidentList').innerHTML = list.length ? list.slice(0, 8).map(i => {
+    const t = INC_TYPE[i.type] || INC_TYPE.other;
+    return `<div class="item"><div class="ico">${t[1]}</div><div class="body">
+        <div class="t">Tray ${i.tray} · ${t[0]}</div>
+        <div class="s">${dateStr(i.at)} · ${INC_ACTION[i.action] || ''}</div>
+        ${i.note ? `<div class="s" style="color:var(--dim)">${esc(i.note)}</div>` : ''}
+      </div><button class="x" onclick="deleteIncident('${i.id}')">✕</button></div>`;
+  }).join('') : '<div class="empty small">Nothing lost or broken. Long may it last.</div>';
 }
 
 /* -- appointments -- */
@@ -1907,6 +2360,8 @@ function renderStats() {
       ? `You've had the tray out <b>${dur(drift)} longer</b> than your own allowances over ${sess.length} sessions — about ${dur(drift / 7)} a day of extra out-time.`
       : `You're <b>${dur(-drift)} under</b> your allowances across ${sess.length} sessions. Well controlled.`;
 
+  renderWeekly(); renderPainChart();
+
   // by reason
   const byReason = {};
   for (const s of sess) {
@@ -1928,6 +2383,77 @@ function renderStats() {
   }).join('') : '<div class="empty small">Nothing logged in the last 7 days.</div>';
 }
 
+/** Wear over the last 7 full days against the 7 before that. */
+function renderWeekly() {
+  const today = dayStart(Date.now()), goal = goalMs();
+  const span = n0 => {
+    let wear = 0, hit = 0, days = 0, out = 0;
+    for (let i = n0; i < n0 + 7; i++) {
+      const d = dayStats(today - i * DAY);
+      if (!d.tracked) continue;
+      days++; wear += d.wear; out += d.out;
+      if (d.wear >= goal) hit++;
+    }
+    return { avg: days ? wear / days : 0, hit, days, out };
+  };
+  const now7 = span(1), prev7 = span(8);          // yesterday back 7, and the 7 before
+
+  if (!now7.days) {
+    $('weekly').innerHTML = '<div class="empty small">Come back after a few full days of tracking.</div>';
+    return;
+  }
+  const dAvg = now7.avg - prev7.avg;
+  const arrow = (v, good) => v === 0 ? '<span class="tag grey">same</span>'
+    : `<span class="tag ${good ? '' : 'red'}">${v > 0 ? '▲' : '▼'} ${dur(Math.abs(v), { zero: '0m' })}</span>`;
+
+  $('weekly').innerHTML = `
+    <div class="stats">
+      <div class="stat"><div class="v mono">${clockDur(now7.avg)}</div><div class="k">Avg / day</div></div>
+      <div class="stat"><div class="v mono">${now7.hit}<span class="faint" style="font-size:15px">/${now7.days}</span></div><div class="k">Days at goal</div></div>
+    </div>
+    <div class="row small" style="margin-top:13px">
+      <span class="faint">vs the week before</span>
+      ${prev7.days ? arrow(dAvg, dAvg >= 0) : '<span class="tag grey">no data</span>'}
+    </div>
+    <div class="small faint" style="margin-top:9px">${
+      !prev7.days ? 'This is your first full week on record.'
+      : dAvg > 5 * MIN ? `Up ${dur(dAvg)} a day on last week — ${now7.hit} day${now7.hit === 1 ? '' : 's'} at goal versus ${prev7.hit}.`
+      : dAvg < -5 * MIN ? `Down ${dur(-dAvg)} a day on last week. Out-time went from ${dur(prev7.out / Math.max(1, prev7.days))} to ${dur(now7.out / Math.max(1, now7.days))} a day.`
+      : 'Holding steady with last week.'}</div>`;
+}
+
+/** Comfort scores, most recent 14, grouped so tray changes are visible. */
+function renderPainChart() {
+  const list = S.pains.slice().sort((a, b) => a.at - b.at).slice(-14);
+  if (!list.length) {
+    $('painChart').innerHTML = '<div class="empty small"><span class="e">😌</span>No comfort scores yet.<br>' +
+      '<span class="tiny">Rate a day on the Trays screen and it charts here.</span></div>';
+    return;
+  }
+  const cols = list.map(p => {
+    const h = p.level / 5 * 100;
+    const cls = p.level >= 4 ? 'bad' : p.level === 3 ? 'mid' : '';
+    return `<div class="col" title="${dateStr(p.at)}">
+        <div class="b ${cls}" style="height:${h}%"></div>
+        <div class="lb">${p.trayDay ? 'd' + p.trayDay : ''}</div>
+      </div>`;
+  }).join('');
+  const firstDays = S.pains.filter(p => p.trayDay <= 2), later = S.pains.filter(p => p.trayDay > 2);
+  const avg = a => a.reduce((x, p) => x + p.level, 0) / a.length;
+  let msg = '';
+  if (firstDays.length >= 2 && later.length >= 2) {
+    const f = avg(firstDays), l = avg(later);
+    msg = f - l >= 0.5
+      ? `First two days of a tray average <b>${f.toFixed(1)}</b>, later days <b>${l.toFixed(1)}</b> — it eases off, as it should.`
+      : `First days average <b>${f.toFixed(1)}</b> and later days <b>${l.toFixed(1)}</b> — fairly even across each tray.`;
+  } else {
+    msg = 'Keep logging and this will show whether each tray eases off after the first days.';
+  }
+  $('painChart').innerHTML = `<div class="chart pain">${cols}</div>
+    <div class="row tiny faint" style="margin-top:9px"><span>Taller = more sore</span><span>d = day of tray</span></div>
+    <div class="small faint" style="margin-top:9px">${msg}</div>`;
+}
+
 /* -- settings -- */
 function renderSettings() {
   const s = S.settings;
@@ -1939,7 +2465,21 @@ function renderSettings() {
   $('togNag').classList.toggle('on', !!s.nag);
   $('togVib').classList.toggle('on', !!s.vibrate);
   $('togAlarm').classList.toggle('on', !!s.alarm);
+  $('togWear').classList.toggle('on', !!s.wearAdjust);
   set('setVol', s.alarmVol == null ? 0.7 : s.alarmVol);
+  set('setSound', s.alarmSound || 'beep');
+  set('setTheme', s.theme || 'dark');
+
+  const base = location.origin + location.pathname;
+  $('siriLinks').innerHTML = [
+    ['Tray out — meal', base + '?out=meal'],
+    ['Tray out — snack', base + '?out=snack'],
+    ['Tray back in', base + '?in=1']
+  ].map(([label, url]) => `<div class="linkrow">
+      <div style="min-width:0"><div class="small" style="font-weight:650">${label}</div>
+        <div class="tiny faint linkurl">${esc(url)}</div></div>
+      <button class="btn sm" style="width:auto;padding:8px 12px;flex:none" onclick="copyLink('${esc(url)}')">Copy</button>
+    </div>`).join('');
   $('permTxt').textContent = !notifySupported() ? 'Not supported in this browser'
     : Notification.permission === 'denied' ? 'Blocked — re-enable in browser settings'
     : 'Nudge me when a tray is due back in';
@@ -1965,6 +2505,12 @@ function renderSettings() {
       <span class="tiny faint">min</span>
     </div>`).join('');
 }
+function copyLink(url) {
+  if (navigator.clipboard) navigator.clipboard.writeText(url).then(
+    () => toast('Link copied'), () => toast('Copy failed — long-press it instead'));
+  else toast('Long-press the link to copy it');
+}
+
 function setPreset(i, field, val) {
   if (field === 'mins') { const n = parseInt(val, 10); if (n > 0) S.settings.presets[i].mins = n; }
   else S.settings.presets[i].label = val;
@@ -2062,7 +2608,25 @@ if ('serviceWorker' in navigator) {
 
 snapshot();          // copy today's data aside BEFORE anything can modify it
 S = load();
+applyTheme();
 bindSettings();
+
+/* Deep links, so an iPhone shortcut can drive the app by voice:
+   ?out=meal starts that break, ?in=1 puts the tray back. */
+function handleLink() {
+  const q = new URLSearchParams(location.search);
+  const out = q.get('out'), back = q.get('in');
+  if (!out && !back) return;
+  history.replaceState(null, '', location.pathname);      // don't re-fire on refresh
+  if (back) {
+    if (openSession()) putBackIn(); else toast('The tray was already in');
+  } else if (out) {
+    if (openSession()) { toast('The tray is already out'); return; }
+    const p = S.settings.presets.find(x => x.id === out.toLowerCase());
+    if (!p) { toast('No break called "' + esc(out) + '"'); return; }
+    startOut(p.id);
+  }
+}
 
 // a tray already out when the app opens: arm the alarm on the first touch,
 // since browsers refuse to start audio without one
@@ -2072,6 +2636,7 @@ if (S.sessions.some(x => !x.in)) rearmPending = true;
 ['bfCurrent', 'bfDays', 'bfAnchor', 'bfDate'].forEach(id =>
   $(id).addEventListener('input', previewBackfill));
 render();
+handleLink();
 setInterval(tick, 1000);
 tick();
 

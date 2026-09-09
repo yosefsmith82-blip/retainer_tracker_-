@@ -126,12 +126,38 @@ A month grid where each day shows how you actually did:
 Appointments live on this screen too — add ortho visits with date, time, location and notes.
 Upcoming and past are listed separately, with reminders before each one.
 
+### Elastics
+Record the elastics you're on — name (Chipmunk, Fox, Ram…), size, strength and how they
+hook up (Class II both sides, triangle left, and so on) — plus any instructions. Change
+them and the old set drops into a history with its dates, so you can see what you were
+wearing when.
+
+### Comfort
+Rate each day 1–5 on the Trays screen. The chart labels each score with the day of the
+tray it fell on, and works out whether your first days are worse than your later ones —
+which is what should happen if a tray is doing its job.
+
+### Lost or broken trays
+Log what happened (lost, cracked, doesn't fit, thrown out), which tray, and what you did
+about it. Orthodontists ask; this is the answer.
+
+### Changing trays by wear rather than days
+Optional, in Settings. A tray is meant to get days × goal-hours of actual wear. Wear it
+less than that and the calendar date arrives before the tray has finished its work, so the
+app can instead project the date it will have had its hours, at the rate you're actually
+wearing it. **Ask your orthodontist before changing how you advance trays.**
+
+### Hands-free with Siri
+Settings lists deep links (`?out=meal`, `?out=snack`, `?in=1`). Put one in an iPhone
+shortcut named "Tray out" and you can say it to Siri instead of unlocking the phone.
+
 ### Notes
 Free-text notes tagged **General / Pain / Fit / Ask my ortho / Progress**, each stamped
 with the tray number and date — so at your next appointment you have the actual list of
 things you meant to ask.
 
 ### Stats
+- This week against last: average per day, days at goal, and what moved.
 - 14-day wear chart against your goal line.
 - Average per day, best day, % of days you hit the goal, current streak.
 - Out-of-mouth analysis: number of sessions, average length, how many ran over, and your
