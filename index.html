@@ -1194,6 +1194,7 @@ const DEFAULTS = () => ({
   photos: [],       // {id, at, tray, size} — the image itself lives in IndexedDB
   links: [],        // {id, name, url, note} — where you buy supplies
   linksSeeded: false,
+  linkSeed: 0,
   pains: [],        // {id, at, level 1-5, tray}
   incidents: [],    // {id, at, tray, type, action, note} — lost/cracked trays
   elastics: { wearing: false, type: '', size: '', force: '', pattern: '', startedAt: null, changedAt: null, history: [] }
@@ -1201,19 +1202,30 @@ const DEFAULTS = () => ({
 
 let S;   // initialised at the bottom, once the helpers below exist
 
-/* Links the app starts life with. Added once — `linksSeeded` means a deletion
-   sticks instead of the link reappearing on the next load. */
-function seedLinks(state) {
-  if (state.linksSeeded) return false;
-  state.links.push({
-    id: uid(),
-    name: 'Aligner supplies',
+/* Links the app starts life with. Each carries a version so a later addition
+   lands once, without re-adding earlier ones — and `linkSeed` records how far
+   it has got, so deleting a link makes it stay deleted. */
+const LINK_SEEDS = [
+  { v: 1, name: 'Aligner supplies',
     url: 'https://shop.app/p/6745881968800?variantId=42981929058464&utm_source=shop_app' +
          '&utm_medium=shop_app_share&utm_campaign=share_product&link_alias=FMjmaiqcHtTeZY',
-    note: 'Saved from Shop — tap the pencil to rename'
-  });
+    note: 'Saved from Shop — tap the pencil to rename' },
+  { v: 2, name: 'Zima Dental cleaning tablets',
+    url: 'https://www.zimadental.com/products/cleaning-tablets',
+    note: 'For cleaning trays and retainers' }
+];
+
+function seedLinks(state) {
+  const done = state.linkSeed || (state.linksSeeded ? 1 : 0);   // older saves used a flag
+  let added = false;
+  for (const l of LINK_SEEDS) {
+    if (l.v <= done) continue;
+    state.links.push({ id: uid(), name: l.name, url: l.url, note: l.note });
+    added = true;
+  }
+  state.linkSeed = LINK_SEEDS[LINK_SEEDS.length - 1].v;
   state.linksSeeded = true;
-  return true;
+  return added;
 }
 
 function load() {
