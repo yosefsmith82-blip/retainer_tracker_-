@@ -137,9 +137,18 @@ Photos are **not** in the JSON backup, which stays a couple of kilobytes. They l
 device only.
 
 ### Supplies
-Trays → **Supplies**. Save where you buy chewies, cases, cleaning tablets or a removal tool.
-Paste any address — `https://` is added if you leave it off, and anything that isn't a real
-address is refused.
+Trays → **Supplies**. Two parts.
+
+**What you run out of.** Say how many packs you bought (1, 2, 3…), how many are in a pack,
+how often you use one and when it arrived. The app counts down and tells you to reorder a
+set number of days before you run dry — five by default — so there is time for delivery.
+Knowing the day you run out is useless; knowing the day to order is the point. **Got a
+delivery** adds the new packs to whatever is left rather than starting the count again, and
+the warning re-arms itself. On the native build the reorder reminder is handed to iOS as a
+scheduled notification, so it arrives whether or not the app was opened in between.
+
+**Where you buy it.** Save the shops themselves — `https://` is added if you leave it off,
+and anything that isn't a real address is refused.
 
 ### Tray change checklist
 Advancing a tray brings up the things that are easy to forget on swap day: seat the new one,

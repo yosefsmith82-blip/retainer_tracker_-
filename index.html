@@ -431,6 +431,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
 /* ---------- photos, supplies, checklist ---------- */
 .photogrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.photogrid .empty{grid-column:1/-1}   /* the empty state spans the grid, not one column */
 .shot{margin:0;position:relative;border-radius:13px;overflow:hidden;background:var(--surf);
   border:1px solid var(--hair2)}
 .shot img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
@@ -453,6 +454,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .check .ce{font-size:19px}
 .check b{display:block;font-size:14.5px;font-weight:650}
 .check .tiny{display:block;margin-top:1px}
+
+/* ---------- supply stock ---------- */
+.stock{background:var(--surf);border:1px solid var(--hair2);border-radius:15px;padding:14px;margin-bottom:12px}
+.stock.due{border-color:rgba(251,191,63,.45);background:rgba(251,191,63,.08)}
+.stock.out{border-color:rgba(251,113,133,.5);background:rgba(251,113,133,.1)}
+.stock .stname{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.stock .stnum{font-size:26px;font-weight:750;letter-spacing:-.03em;line-height:1}
 
 /* ---------- lock screen ---------- */
 .lockscreen{position:fixed;inset:0;z-index:100;background:var(--bg);
@@ -654,6 +662,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <h2 style="margin:0">Supplies</h2>
       <button class="btn sm" style="width:auto;padding:8px 13px;flex:none" onclick="openLinkEdit()">+ Add link</button>
     </div>
+    <div id="stockList"></div>
+    <button class="btn sm" style="margin-bottom:14px" onclick="openStock()">+ Track what you run out of</button>
     <div id="linkList"></div>
   </div>
 
@@ -1067,6 +1077,47 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 </div>
 
+<div class="sheet" id="sheetStock">
+  <div class="scrim" onclick="closeSheet('sheetStock')"></div>
+  <div class="panel">
+    <div class="grab"></div>
+    <h2 id="stTitle">Track a supply</h2>
+    <p class="small faint" style="margin:0 0 14px">Say what you bought and when it arrived, and
+      you'll be told to reorder with days to spare for the post.</p>
+    <label class="f"><span>What is it</span><input id="stName" placeholder="Cleaning tablets"></label>
+    <div id="stPacksRow">
+      <label class="f"><span>How many packs did you buy</span>
+        <div class="agorow" id="stPackBtns">
+          <button type="button" class="agobtn" data-n="1" onclick="setPacks(1)">1 pack</button>
+          <button type="button" class="agobtn" data-n="2" onclick="setPacks(2)">2 packs</button>
+          <button type="button" class="agobtn" data-n="3" onclick="setPacks(3)">3 packs</button>
+          <button type="button" class="agobtn" data-n="4" onclick="setPacks(4)">4 packs</button>
+        </div>
+        <input type="number" id="stPacks" class="hidden" value="1"></label>
+    </div>
+    <div id="stCountRow" class="hidden">
+      <label class="f"><span>How many are left now</span><input type="number" id="stCount" min="0" inputmode="numeric"></label>
+    </div>
+    <div class="grid2">
+      <label class="f"><span>In each pack</span><input type="number" id="stPackSize" min="1" inputmode="numeric" value="30"></label>
+      <label class="f"><span>How often</span>
+        <select id="stPerDay">
+          <option value="1">One a day</option>
+          <option value="0.5">One every other day</option>
+          <option value="0.33">One every 3 days</option>
+          <option value="0.14">One a week</option>
+          <option value="2">Two a day</option>
+        </select></label>
+    </div>
+    <label class="f"><span>When did it arrive</span><input type="datetime-local" id="stWhen"></label>
+    <label class="f"><span>Warn me this many days before it runs out</span>
+      <input type="number" id="stLead" min="0" max="60" inputmode="numeric" value="5"></label>
+    <button class="btn primary" onclick="saveStock()">Save</button>
+    <button class="btn sm danger" style="margin-top:9px" id="stDel" onclick="deleteStock()">Stop tracking</button>
+    <button class="btn ghost sm" style="margin-top:9px" onclick="closeSheet('sheetStock')">Cancel</button>
+  </div>
+</div>
+
 <div class="sheet" id="sheetLink">
   <div class="scrim" onclick="closeSheet('sheetLink')"></div>
   <div class="panel">
@@ -1193,6 +1244,7 @@ const DEFAULTS = () => ({
   notes: [],
   photos: [],       // {id, at, tray, size} — the image itself lives in IndexedDB
   links: [],        // {id, name, url, note} — where you buy supplies
+  stock: [],        // {id, name, count, at, perDay, packSize, leadDays, notifiedFor}
   linksSeeded: false,
   linkSeed: 0,
   pains: [],        // {id, at, level 1-5, tray}
@@ -1247,6 +1299,7 @@ function load() {
     if (!Array.isArray(merged.pains)) merged.pains = [];
     if (!Array.isArray(merged.photos)) merged.photos = [];
     if (!Array.isArray(merged.links)) merged.links = [];
+    if (!Array.isArray(merged.stock)) merged.stock = [];
     if (seedLinks(merged)) {
       try { localStorage.setItem(KEY, JSON.stringify(merged)); } catch (e) {}
     }
@@ -2111,6 +2164,156 @@ function deleteLink() {
   save(); closeSheet('sheetLink'); renderLinks();
 }
 
+/* ---------------------- supplies you run out of ----------------------- */
+/* Cleaning tablets and the like arrive by post, so knowing the day you run out
+   is too late — the reminder has to come far enough ahead to order and wait for
+   delivery. Stock is held as a count at a moment, and depleted from there, so a
+   restock is just "add to what is left now". */
+
+const stockRate = it => (it.perDay > 0 ? it.perDay : 1);
+
+/** How many are left right now. Counted in whole units — you still have all 60
+    tablets until the first one is actually used, not 59.9 of them. */
+function stockLeft(it) {
+  const days = Math.max(0, (Date.now() - it.at) / DAY);
+  return Math.max(0, it.count - Math.floor(days * stockRate(it)));
+}
+/** When it hits zero, and when to order so it arrives in time. */
+const stockRunOut = it => it.at + (it.count / stockRate(it)) * DAY;
+const stockReorderAt = it => stockRunOut(it) - (it.leadDays || 5) * DAY;
+
+function openStock(id) {
+  const it = id ? S.stock.find(x => x.id === id) : null;
+  editingStock = id || null;
+  $('stTitle').textContent = it ? it.name : 'Track a supply';
+  $('stName').value = it ? it.name : 'Cleaning tablets';
+  $('stPackSize').value = it ? it.packSize : 30;
+  $('stPerDay').value = it ? String(it.perDay) : '1';
+  $('stLead').value = it ? it.leadDays : 5;
+  $('stWhen').value = toLocalInput(it ? it.at : Date.now());
+  $('stPacks').value = it ? '' : '1';
+  $('stPacksRow').classList.toggle('hidden', !!it);
+  $('stCountRow').classList.toggle('hidden', !it);
+  if (it) $('stCount').value = Math.round(stockLeft(it));
+  $('stDel').style.display = it ? 'block' : 'none';
+  setPacks(it ? 0 : 1);
+  openSheet('sheetStock');
+}
+let editingStock = null;
+
+function setPacks(n) {
+  if (n) $('stPacks').value = n;
+  [...document.querySelectorAll('#stPackBtns .agobtn')].forEach(b =>
+    b.classList.toggle('active', +b.dataset.n === +$('stPacks').value));
+}
+
+function saveStock() {
+  const name = $('stName').value.trim() || 'Supply';
+  const packSize = parseInt($('stPackSize').value, 10);
+  const perDay = parseFloat($('stPerDay').value);
+  const leadDays = parseInt($('stLead').value, 10);
+  const when = $('stWhen').value ? new Date($('stWhen').value).getTime() : Date.now();
+  if (!packSize || packSize < 1) { toast('How many in a pack?'); return; }
+  if (!perDay || perDay <= 0) { toast('How often do you use one?'); return; }
+  if (isNaN(leadDays) || leadDays < 0) { toast('Days of warning must be 0 or more'); return; }
+
+  if (editingStock) {
+    const it = S.stock.find(x => x.id === editingStock);
+    const count = parseFloat($('stCount').value);
+    if (isNaN(count) || count < 0) { toast('How many are left?'); return; }
+    Object.assign(it, { name, packSize, perDay, leadDays, count, at: Date.now(), notifiedFor: null });
+  } else {
+    const packs = parseInt($('stPacks').value, 10);
+    if (!packs || packs < 1) { toast('How many packs?'); return; }
+    S.stock.push({
+      id: uid(), name, packSize, perDay, leadDays,
+      count: packs * packSize, at: when, notifiedFor: null
+    });
+  }
+  save(); closeSheet('sheetStock'); render(); scheduleStockNotices();
+  const it = editingStock ? S.stock.find(x => x.id === editingStock) : S.stock[S.stock.length - 1];
+  toast('Reorder by ' + dateStr(stockReorderAt(it)));
+  editingStock = null;
+}
+
+/** A delivery arrived: add it to whatever is left rather than starting over. */
+function restock(id) {
+  const it = S.stock.find(x => x.id === id);
+  if (!it) return;
+  const packs = parseInt(prompt(`How many packs of ${it.packSize} arrived?`, '1'), 10);
+  if (!packs || packs < 1) return;
+  it.count = stockLeft(it) + packs * it.packSize;
+  it.at = Date.now();
+  it.notifiedFor = null;
+  save(); render(); scheduleStockNotices();
+  toast(`Topped up — runs out ${dateStr(stockRunOut(it))}`);
+}
+
+function deleteStock() {
+  if (!editingStock || !confirm('Stop tracking this?')) return;
+  S.stock = S.stock.filter(x => x.id !== editingStock);
+  save(); closeSheet('sheetStock'); render();
+  editingStock = null;
+}
+
+/* The reorder date is usually days away, so on the native build hand it to iOS
+   as a scheduled notification — it then arrives whether or not the app is ever
+   opened in between. Re-run whenever stock changes. */
+async function scheduleStockNotices() {
+  const LN = Native.plugin('LocalNotifications');
+  if (!LN || !S.stock.length) return;
+  try {
+    const list = [];
+    S.stock.forEach((it, i) => {
+      const at = new Date(stockReorderAt(it));
+      if (at.getTime() < Date.now() + MIN) return;
+      list.push({
+        id: 770000 + i,
+        title: 'Order more ' + it.name.toLowerCase(),
+        body: `About ${it.leadDays || 5} days of ${it.name.toLowerCase()} left — order now so it arrives in time.`,
+        schedule: { at, allowWhileIdle: true }
+      });
+    });
+    await LN.cancel({ notifications: S.stock.map((_, i) => ({ id: 770000 + i })) }).catch(() => {});
+    if (list.length) await LN.schedule({ notifications: list });
+  } catch (e) { /* scheduling is a bonus; the in-app check still runs */ }
+}
+
+function renderStock() {
+  const el = $('stockList');
+  if (!el) return;
+  el.innerHTML = S.stock.map(it => {
+    const left = stockLeft(it), total = it.packSize;
+    const runOut = stockRunOut(it), reorder = stockReorderAt(it);
+    const daysLeft = Math.max(0, (runOut - Date.now()) / DAY);
+    const pct = clamp(left / Math.max(total, left) * 100, 0, 100);
+    const due = Date.now() >= reorder;
+    const outNow = left <= 0;
+    return `<div class="stock ${outNow ? 'out' : due ? 'due' : ''}">
+      <div class="row" style="align-items:flex-start">
+        <div style="min-width:0">
+          <div class="stname">${esc(it.name)}</div>
+          <div class="tiny faint">${it.perDay === 1 ? 'one a day' :
+            it.perDay === 0.5 ? 'one every other day' : it.perDay + ' a day'} · packs of ${it.packSize}</div>
+        </div>
+        <div class="center" style="flex:none">
+          <div class="stnum mono">${left}</div>
+          <div class="tiny faint">left</div>
+        </div>
+      </div>
+      <div class="bar" style="margin:11px 0 7px"><i class="${outNow ? 'red' : due ? 'amber' : ''}" style="width:${pct}%"></i></div>
+      <div class="small" style="font-weight:600">${
+        outNow ? '<span style="color:var(--red)">Out — order now</span>'
+        : due ? `<span style="color:var(--amber)">Order now</span> · about ${Math.round(daysLeft)} day${Math.round(daysLeft) === 1 ? '' : 's'} left`
+        : `Runs out ${dateStr(runOut)} · <b>order by ${dateStr(reorder)}</b>`}</div>
+      <div class="btnrow" style="margin-top:11px">
+        <button class="btn sm primary" onclick="restock('${it.id}')">Got a delivery</button>
+        <button class="btn sm" onclick="openStock('${it.id}')">Edit</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 function renderLinks() {
   const el = $('linkList');
   if (!el) return;
@@ -2946,7 +3149,7 @@ function buzz(pattern) {
 }
 
 function notify(title, body, tag) {
-  if (!S.settings.notify || !notifySupported() || Notification.permission !== 'granted') return;
+  if (!S.settings.notify || !notifySupported() || Notification.permission !== 'granted') return false;
   const opts = {
     body, tag: tag || NOTIF_TAG, renotify: true, icon: 'icon-192.png', badge: 'icon-192.png',
     vibrate: S.settings.vibrate ? [200, 100, 200] : undefined, requireInteraction: true
@@ -2954,8 +3157,9 @@ function notify(title, body, tag) {
   try {
     if (swReg && swReg.showNotification) swReg.showNotification(title, opts);
     else new Notification(title, opts);
-  } catch (e) { console.warn('notify failed', e); }
+  } catch (e) { console.warn('notify failed', e); return false; }
   buzz([200, 100, 200]);
+  return true;
 }
 function clearNotif(tag) {
   if (!swReg || !swReg.getNotifications) return;
@@ -2982,6 +3186,20 @@ function checkReminders() {
       s.lastNag = now; save();
       notify('🦷 Aligner still out',
         `${dur(now - s.out)} out of your mouth — ${dur(now - due)} past your allowance.`, s.id);
+    }
+  }
+  // supplies that need ordering, with shipping time allowed for
+  for (const it of S.stock) {
+    const reorder = stockReorderAt(it);
+    if (now >= reorder && it.notifiedFor !== it.at) {
+      const left = stockLeft(it);
+      // only mark it delivered if it actually went out, so switching notifications
+      // on later still gets the warning rather than having silently missed it
+      const sent = notify('Order more ' + it.name.toLowerCase(),
+        left > 0
+          ? `About ${left} left — roughly ${Math.max(1, Math.round((stockRunOut(it) - now) / DAY))} days. Order now so it arrives in time.`
+          : `You've run out. Order today.`, 'stock' + it.id);
+      if (sent) { it.notifiedFor = it.at; save(); }
     }
   }
   // tray change due
@@ -3235,7 +3453,7 @@ function renderTrays() {
   }
   $('trayDueMsg').innerHTML = msg;
 
-  renderPain(); renderElastic(); renderIncidents(); renderLinks(); renderPhotos();
+  renderPain(); renderElastic(); renderIncidents(); renderLinks(); renderStock(); renderPhotos();
 
   const hist = S.trayHistory.slice().sort((a, b) => b.startedAt - a.startedAt);
   $('trayHistory').innerHTML = hist.length ? hist.map(h => {
