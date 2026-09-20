@@ -1193,6 +1193,7 @@ const DEFAULTS = () => ({
   notes: [],
   photos: [],       // {id, at, tray, size} — the image itself lives in IndexedDB
   links: [],        // {id, name, url, note} — where you buy supplies
+  linksSeeded: false,
   pains: [],        // {id, at, level 1-5, tray}
   incidents: [],    // {id, at, tray, type, action, note} — lost/cracked trays
   elastics: { wearing: false, type: '', size: '', force: '', pattern: '', startedAt: null, changedAt: null, history: [] }
@@ -1200,12 +1201,28 @@ const DEFAULTS = () => ({
 
 let S;   // initialised at the bottom, once the helpers below exist
 
+/* Links the app starts life with. Added once — `linksSeeded` means a deletion
+   sticks instead of the link reappearing on the next load. */
+function seedLinks(state) {
+  if (state.linksSeeded) return false;
+  state.links.push({
+    id: uid(),
+    name: 'Aligner supplies',
+    url: 'https://shop.app/p/6745881968800?variantId=42981929058464&utm_source=shop_app' +
+         '&utm_medium=shop_app_share&utm_campaign=share_product&link_alias=FMjmaiqcHtTeZY',
+    note: 'Saved from Shop — tap the pencil to rename'
+  });
+  state.linksSeeded = true;
+  return true;
+}
+
 function load() {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) {
       // persist immediately, otherwise the tray start time would reset on every reload
       const fresh = DEFAULTS();
+      seedLinks(fresh);
       localStorage.setItem(KEY, JSON.stringify(fresh));
       return fresh;
     }
@@ -1218,6 +1235,9 @@ function load() {
     if (!Array.isArray(merged.pains)) merged.pains = [];
     if (!Array.isArray(merged.photos)) merged.photos = [];
     if (!Array.isArray(merged.links)) merged.links = [];
+    if (seedLinks(merged)) {
+      try { localStorage.setItem(KEY, JSON.stringify(merged)); } catch (e) {}
+    }
     if (!Array.isArray(merged.incidents)) merged.incidents = [];
     if (!merged.elastics || typeof merged.elastics !== 'object') merged.elastics = base.elastics;
     if (!Array.isArray(merged.elastics.history)) merged.elastics.history = [];
