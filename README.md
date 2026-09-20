@@ -66,6 +66,18 @@ red once you're over.
 
 Reminders need notification permission (tap **Enable notifications** on the Today screen).
 
+**Loudness.** The beeps run through a compressor and a tanh soft-clipper before the output.
+A lone sine at full gain is quiet because its peak is its only energy; harmonics driven into
+a limiter raise the average level, which is what the ear hears as loud. Measured: RMS 0.74
+against 0.69 before, and every sound now peaks at 0.95 instead of clipping past 1.0. Five
+sounds, **Siren** and **Urgent** being the loudest.
+
+**The ring/silent switch.** On iPhone that switch mutes Web Audio and a website cannot
+override it — this is the single thing the installed web app cannot do. The native build
+sets its audio session to `.playback`, the media category, which the silent switch does not
+touch, so the App Store version rings regardless. Until then the 📅 calendar alarm is the
+backstop.
+
 **The alarm** is the reliable one. When you take the tray out, the app schedules its beeps
 on the Web Audio clock, which runs in the audio thread rather than in JavaScript — so they
 sound at the right moment even after the phone has frozen the app in the background. A
@@ -114,6 +126,24 @@ goal is genuinely out of reach, not merely because the morning is young.
 ### Milestones
 A quarter, halfway, three quarters, every tenth tray and the final one get marked when you
 advance. The Trays screen also shows the whole course as a strip, one segment per tray.
+
+### Progress photos
+Trays → **Progress photos**. Shots are shrunk to about 1100px and stored in IndexedDB rather
+than with the rest of the data, because phone photos are several megabytes each and would
+blow the storage limit in a week. Two or more and a **then and now** pair appears — first
+against latest, which is where the movement actually shows.
+
+Photos are **not** in the JSON backup, which stays a couple of kilobytes. They live on the
+device only.
+
+### Supplies
+Trays → **Supplies**. Save where you buy chewies, cases, cleaning tablets or a removal tool.
+Paste any address — `https://` is added if you leave it off, and anything that isn't a real
+address is refused.
+
+### Tray change checklist
+Advancing a tray brings up the things that are easy to forget on swap day: seat the new one,
+chewies, keep the old tray, take a photo, elastics back on.
 
 ### Trays
 - Which tray you're on, out of how many, and how far through the whole set you are.

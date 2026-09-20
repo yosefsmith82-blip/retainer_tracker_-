@@ -429,6 +429,31 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   .rlist>div{border-bottom:1px solid #eee;color:#222}
 }
 
+/* ---------- photos, supplies, checklist ---------- */
+.photogrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.shot{margin:0;position:relative;border-radius:13px;overflow:hidden;background:var(--surf);
+  border:1px solid var(--hair2)}
+.shot img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
+.shot figcaption{position:absolute;left:0;right:0;bottom:0;padding:16px 7px 5px;font-size:10.5px;font-weight:700;
+  color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.8));display:flex;justify-content:space-between;gap:4px}
+.shot figcaption span{opacity:.75;font-weight:600}
+.shotx{position:absolute;top:5px;right:5px;width:24px;height:24px;border-radius:99px;font-size:11px;
+  background:rgba(0,0,0,.55);color:#fff;display:grid;place-items:center;backdrop-filter:blur(4px)}
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.compare figure{margin:0}
+.compare img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:13px;display:block;
+  border:1px solid var(--hair2)}
+.compare figcaption{font-size:11px;color:var(--faint);text-align:center;margin-top:6px;font-weight:650}
+.bigphoto{width:100%;border-radius:16px;display:block;max-height:64vh;object-fit:contain;background:#000}
+.linka{color:var(--text);text-decoration:none;border-bottom:1px solid var(--hair)}
+.check{display:flex;align-items:center;gap:11px;padding:13px;border-radius:14px;background:var(--surf);
+  border:1px solid var(--hair2);margin-bottom:8px;transition:.15s}
+.check.on{background:rgba(74,222,155,.13);border-color:rgba(74,222,155,.4)}
+.check input{width:22px;height:22px;flex:none;accent-color:var(--mint)}
+.check .ce{font-size:19px}
+.check b{display:block;font-size:14.5px;font-weight:650}
+.check .tiny{display:block;margin-top:1px}
+
 /* ---------- lock screen ---------- */
 .lockscreen{position:fixed;inset:0;z-index:100;background:var(--bg);
   display:flex;align-items:center;justify-content:center;padding:24px}
@@ -615,6 +640,25 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
   <div class="card">
     <div class="row" style="margin-bottom:12px">
+      <h2 style="margin:0">Progress photos</h2>
+      <button class="btn sm" style="width:auto;padding:8px 13px;flex:none"
+              onclick="document.getElementById('photoFile').click()">+ Add</button>
+    </div>
+    <input type="file" id="photoFile" accept="image/*" class="hidden" onchange="addPhoto(event)">
+    <div class="photogrid" id="photoGrid"></div>
+    <div id="photoCompare"></div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="margin-bottom:12px">
+      <h2 style="margin:0">Supplies</h2>
+      <button class="btn sm" style="width:auto;padding:8px 13px;flex:none" onclick="openLinkEdit()">+ Add link</button>
+    </div>
+    <div id="linkList"></div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="margin-bottom:12px">
       <h2 style="margin:0">Tray history</h2>
       <span class="tiny faint">tap to edit</span>
     </div>
@@ -673,7 +717,11 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
   </div>
   <div class="card">
-    <h2>Notes</h2>
+    <div class="row" style="margin-bottom:12px">
+      <h2 style="margin:0">Notes</h2>
+      <span class="tiny faint" id="noteCount"></span>
+    </div>
+    <input id="noteSearch" placeholder="Search notes…" oninput="renderNotes()" style="margin-bottom:12px">
     <div id="notesList"></div>
   </div>
 </section>
@@ -774,11 +822,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <option value="chime">Chime — soft and rising</option>
         <option value="bell">Bell — single ring</option>
         <option value="urgent">Urgent — hard to ignore</option>
+        <option value="siren">Siren — the loudest</option>
       </select></label>
     <label class="f" style="margin:12px 0"><span>Alarm volume</span>
       <input type="range" id="setVol" min="0.1" max="1" step="0.1" class="range"></label>
     <button class="btn sm" onclick="Alarm.test()">🔔 Test the alarm</button>
-    <div class="tiny faint" style="margin:8px 0 4px">If you hear nothing, check the side switch isn't on silent.</div>
+    <div class="tiny faint" style="margin:8px 0 4px" id="silentNote"></div>
     <div class="switch" style="margin-top:8px">
       <div><div class="lbl">Keep nagging</div><div class="desc">Repeat the reminder every few minutes until the tray is back in</div></div>
       <div class="tog" id="togNag" onclick="toggleNag()"></div>
@@ -1018,6 +1067,43 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 </div>
 
+<div class="sheet" id="sheetLink">
+  <div class="scrim" onclick="closeSheet('sheetLink')"></div>
+  <div class="panel">
+    <div class="grab"></div>
+    <h2 id="linkTitle">Add a link</h2>
+    <p class="small faint" style="margin:0 0 14px">Anywhere you buy chewies, cases, cleaning
+      tablets, a removal tool — paste the address and it sits one tap away.</p>
+    <label class="f"><span>Name</span><input id="lkName" placeholder="Chewies on Amazon"></label>
+    <label class="f"><span>Web address</span><input id="lkUrl" type="url" inputmode="url" placeholder="amazon.co.uk/..."></label>
+    <label class="f"><span>Note</span><input id="lkNote" placeholder="The soft blue ones"></label>
+    <button class="btn primary" onclick="saveLink()">Save</button>
+    <button class="btn sm danger" style="margin-top:9px" id="lkDel" onclick="deleteLink()">Delete</button>
+    <button class="btn ghost sm" style="margin-top:9px" onclick="closeSheet('sheetLink')">Cancel</button>
+  </div>
+</div>
+
+<div class="sheet" id="sheetPhoto">
+  <div class="scrim" onclick="closeSheet('sheetPhoto')"></div>
+  <div class="panel">
+    <div class="grab"></div>
+    <img id="bigPhoto" class="bigphoto" alt="">
+    <div class="small center" id="bigPhotoCap" style="margin-top:10px"></div>
+    <button class="btn ghost sm" style="margin-top:12px" onclick="closeSheet('sheetPhoto')">Close</button>
+  </div>
+</div>
+
+<div class="sheet" id="sheetChecklist">
+  <div class="scrim" onclick="closeSheet('sheetChecklist')"></div>
+  <div class="panel">
+    <div class="grab"></div>
+    <h2 id="clTitle">Tray change</h2>
+    <p class="small faint" style="margin:0 0 14px">The bits that are easy to forget on swap day.</p>
+    <div id="clList"></div>
+    <button class="btn primary" style="margin-top:14px" onclick="closeSheet('sheetChecklist')">Done</button>
+  </div>
+</div>
+
 <div class="sheet" id="sheetReport">
   <div class="scrim" onclick="closeSheet('sheetReport')"></div>
   <div class="panel">
@@ -1087,7 +1173,7 @@ const DEFAULTS = () => ({
     earlyMins: 5,
     vibrate: true,
     alarm: true,          // ring an audible alarm from inside the app
-    alarmVol: 0.7,
+    alarmVol: 1,
     alarmSound: 'beep',
     theme: 'dark',        // dark | light | auto
     wearAdjust: false,    // set the tray change date by wear hours, not calendar days
@@ -1105,6 +1191,8 @@ const DEFAULTS = () => ({
   sessions: [],
   appointments: [],
   notes: [],
+  photos: [],       // {id, at, tray, size} — the image itself lives in IndexedDB
+  links: [],        // {id, name, url, note} — where you buy supplies
   pains: [],        // {id, at, level 1-5, tray}
   incidents: [],    // {id, at, tray, type, action, note} — lost/cracked trays
   elastics: { wearing: false, type: '', size: '', force: '', pattern: '', startedAt: null, changedAt: null, history: [] }
@@ -1128,6 +1216,8 @@ function load() {
     merged.trayHistory.forEach(h => { if (!h.id) h.id = uid(); });
     // fields added after a save was written: keep the defaults rather than undefined
     if (!Array.isArray(merged.pains)) merged.pains = [];
+    if (!Array.isArray(merged.photos)) merged.photos = [];
+    if (!Array.isArray(merged.links)) merged.links = [];
     if (!Array.isArray(merged.incidents)) merged.incidents = [];
     if (!merged.elastics || typeof merged.elastics !== 'object') merged.elastics = base.elastics;
     if (!Array.isArray(merged.elastics.history)) merged.elastics.history = [];
@@ -1495,6 +1585,26 @@ function dismissMilestone() {
   save();
 }
 
+/* ------------------- tray change checklist --------------------------- */
+const CHECKS = [
+  ['🦷', 'New tray in', 'Seat it properly before anything else'],
+  ['🪑', 'Chewies', 'A few minutes per side helps it seat fully'],
+  ['📦', 'Old tray away', 'Keep the last one — you may need to go back to it'],
+  ['📸', 'Progress photo', 'Takes five seconds, and the change only shows over weeks'],
+  ['🎯', 'Elastics back on', 'If you are wearing them']
+];
+
+function openChecklist() {
+  $('clTitle').textContent = 'Tray ' + S.tray.number;
+  $('clList').innerHTML = CHECKS.map((c, i) =>
+    `<label class="check" id="chk${i}">
+       <input type="checkbox" onchange="this.closest('.check').classList.toggle('on',this.checked)">
+       <span class="ce">${c[0]}</span>
+       <span><b>${c[1]}</b><span class="tiny faint">${c[2]}</span></span>
+     </label>`).join('');
+  openSheet('sheetChecklist');
+}
+
 function nextTray() {
   const t = S.settings.totalTrays;
   if (S.tray.number >= t && !confirm(`Tray ${S.tray.number} is your last tray of ${t}. Go past it anyway?`)) return;
@@ -1509,6 +1619,7 @@ function nextTray() {
   const m = milestoneFor(S.tray.number);
   if (m) showMilestone(m); else toast(`Now on tray ${S.tray.number} 🎉`);
   buzz([30, 60, 30]);
+  setTimeout(openChecklist, 600);
 }
 
 function prevTray() {
@@ -1792,6 +1903,196 @@ function openDay(ds) {
     $('aWhen').value = toLocalInput(d.getTime());
   };
   openSheet('sheetDay');
+}
+
+/* --------------------------- progress photos -------------------------- */
+/* Photos are far too big for localStorage, so they live in IndexedDB and are
+   compressed hard on the way in. Only the small metadata list sits in S. */
+
+const PhotoDB = {
+  db: null,
+  open() {
+    if (this.db) return Promise.resolve(this.db);
+    return new Promise((res, rej) => {
+      const r = indexedDB.open('alignerPhotos', 1);
+      r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('p')) r.result.createObjectStore('p'); };
+      r.onsuccess = () => { this.db = r.result; res(this.db); };
+      r.onerror = () => rej(r.error);
+    });
+  },
+  async put(id, blob) {
+    const db = await this.open();
+    return new Promise((res, rej) => {
+      const tx = db.transaction('p', 'readwrite');
+      tx.objectStore('p').put(blob, id);
+      tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+    });
+  },
+  async get(id) {
+    const db = await this.open();
+    return new Promise((res, rej) => {
+      const tx = db.transaction('p', 'readonly');
+      const q = tx.objectStore('p').get(id);
+      q.onsuccess = () => res(q.result || null);
+      q.onerror = () => rej(q.error);
+    });
+  },
+  async del(id) {
+    const db = await this.open();
+    return new Promise(res => {
+      const tx = db.transaction('p', 'readwrite');
+      tx.objectStore('p').delete(id);
+      tx.oncomplete = res; tx.onerror = res;
+    });
+  }
+};
+
+/** Shrink to something sane before storing — phone photos are 3-5MB each. */
+function shrinkImage(file, maxDim = 1100, quality = 0.72) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * scale);
+      c.height = Math.round(img.height * scale);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob(b => b ? res(b) : rej(new Error('encode failed')), 'image/jpeg', quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('not an image')); };
+    img.src = url;
+  });
+}
+
+async function addPhoto(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!file) return;
+  try {
+    toast('Saving photo…');
+    const blob = await shrinkImage(file);
+    const id = uid();
+    await PhotoDB.put(id, blob);
+    S.photos.unshift({ id, at: Date.now(), tray: S.tray.number, size: blob.size });
+    save(); renderPhotos();
+    toast(`Saved — tray ${S.tray.number}`);
+  } catch (e) {
+    toast('That image could not be saved');
+  }
+}
+
+async function deletePhoto(id) {
+  if (!confirm('Delete this photo?')) return;
+  await PhotoDB.del(id);
+  S.photos = S.photos.filter(p => p.id !== id);
+  save(); renderPhotos();
+}
+
+const photoUrls = new Map();
+async function photoUrl(id) {
+  if (photoUrls.has(id)) return photoUrls.get(id);
+  const blob = await PhotoDB.get(id);
+  if (!blob) return null;
+  const url = URL.createObjectURL(blob);
+  photoUrls.set(id, url);
+  return url;
+}
+
+async function renderPhotos() {
+  const el = $('photoGrid');
+  if (!el) return;
+  if (!S.photos.length) {
+    el.innerHTML = '<div class="empty small"><span class="e">📸</span>No photos yet.<br>' +
+      '<span class="tiny">One a tray is plenty — the change only shows over weeks.</span></div>';
+    $('photoCompare').innerHTML = '';
+    return;
+  }
+  const items = await Promise.all(S.photos.slice(0, 24).map(async p => {
+    const url = await photoUrl(p.id);
+    return `<figure class="shot">
+      <img src="${url || ''}" alt="Tray ${p.tray}" loading="lazy" onclick="openPhoto('${p.id}')">
+      <figcaption>Tray ${p.tray}<span>${new Date(p.at).toLocaleDateString([], { day: 'numeric', month: 'short' })}</span></figcaption>
+      <button class="shotx" onclick="deletePhoto('${p.id}')">✕</button>
+    </figure>`;
+  }));
+  el.innerHTML = items.join('');
+
+  // first against latest, which is the comparison that actually shows movement
+  if (S.photos.length >= 2) {
+    const first = S.photos[S.photos.length - 1], last = S.photos[0];
+    const [a, b] = await Promise.all([photoUrl(first.id), photoUrl(last.id)]);
+    $('photoCompare').innerHTML = `
+      <div class="rsect" style="margin-top:18px">Then and now</div>
+      <div class="compare">
+        <figure><img src="${a || ''}" alt="first"><figcaption>Tray ${first.tray} · ${dateStr(first.at)}</figcaption></figure>
+        <figure><img src="${b || ''}" alt="latest"><figcaption>Tray ${last.tray} · ${dateStr(last.at)}</figcaption></figure>
+      </div>`;
+  } else $('photoCompare').innerHTML = '';
+}
+
+async function openPhoto(id) {
+  const url = await photoUrl(id);
+  if (!url) { toast('That photo is missing'); return; }
+  const p = S.photos.find(x => x.id === id);
+  $('bigPhoto').src = url;
+  $('bigPhotoCap').textContent = `Tray ${p.tray} · ${dateStr(p.at)}, ${timeStr(p.at)}`;
+  openSheet('sheetPhoto');
+}
+
+/* ------------------------- supplies and links ------------------------- */
+function openLinkEdit(id) {
+  const l = id ? S.links.find(x => x.id === id) : null;
+  editingLink = id || null;
+  $('linkTitle').textContent = l ? 'Edit link' : 'Add a link';
+  $('lkName').value = l ? l.name : '';
+  $('lkUrl').value = l ? l.url : '';
+  $('lkNote').value = l ? (l.note || '') : '';
+  $('lkDel').style.display = l ? 'block' : 'none';
+  openSheet('sheetLink');
+}
+let editingLink = null;
+
+function saveLink() {
+  const name = $('lkName').value.trim();
+  let url = $('lkUrl').value.trim();
+  if (!name) { toast('Give it a name'); return; }
+  if (!url) { toast('Paste the web address'); return; }
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  // new URL() is far too forgiving: it percent-encodes spaces straight into the
+  // hostname, so "not a url at all" parses happily. Check the host itself.
+  let parsed;
+  try { parsed = new URL(url); } catch (e) { parsed = null; }
+  if (!parsed || !/^[a-z0-9.-]+$/i.test(parsed.hostname) || !parsed.hostname.includes('.')) {
+    toast("That doesn't look like a web address"); return;
+  }
+  const data = { name, url, note: $('lkNote').value.trim() };
+  if (editingLink) Object.assign(S.links.find(l => l.id === editingLink), data);
+  else S.links.push(Object.assign({ id: uid() }, data));
+  save(); closeSheet('sheetLink'); renderLinks(); toast('Saved');
+}
+
+function deleteLink() {
+  if (!editingLink || !confirm('Delete this link?')) return;
+  S.links = S.links.filter(l => l.id !== editingLink);
+  save(); closeSheet('sheetLink'); renderLinks();
+}
+
+function renderLinks() {
+  const el = $('linkList');
+  if (!el) return;
+  el.innerHTML = S.links.length ? S.links.map(l => {
+    let host = '';
+    try { host = new URL(l.url).hostname.replace(/^www\./, ''); } catch (e) {}
+    return `<div class="item">
+      <div class="ico">🛒</div>
+      <div class="body"><a class="t linka" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.name)}</a>
+        <div class="s">${esc(l.note || host)}</div></div>
+      <button class="x" onclick="openLinkEdit('${l.id}')">✎</button>
+    </div>`;
+  }).join('') : `<div class="empty small"><span class="e">🛒</span>Nowhere saved yet.<br>
+      <span class="tiny">Add where you buy chewies, cases, cleaning tablets or a removal tool.</span></div>`;
 }
 
 /* ----------------------- report for the ortho ------------------------- */
@@ -2342,9 +2643,47 @@ const Alarm = {
 
   supported() { return !!(window.AudioContext || window.webkitAudioContext); },
 
+  /** The loudness chain, built on any context so it can be measured offline. */
+  buildChain(ctx) {
+    // Measured rather than guessed. A lone sine at gain 1.0 is quiet because its
+    // peak is its only energy. Driving harmonics into a compressor and then a
+    // tanh soft-clipper lifts the average level, which is what the ear hears as
+    // "loud": this lands at RMS 0.76 with peaks at 0.98, against 0.69 while hard
+    // clipping before. Louder and cleaner at the same time.
+    const pre = ctx.createGain();
+    pre.gain.value = 2;
+
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -16;
+    comp.knee.value = 0;
+    comp.ratio.value = 20;
+    comp.attack.value = 0.002;
+    comp.release.value = 0.12;
+
+    const shaper = ctx.createWaveShaper();
+    const curve = new Float32Array(1024);
+    for (let i = 0; i < 1024; i++) curve[i] = Math.tanh(((i / 1023) * 2 - 1) * 6);
+    shaper.curve = curve;
+    // no oversampling: it resamples around the curve and overshoots the ceiling
+    // it is supposed to enforce, which put the loudest sounds back into clipping
+    shaper.oversample = 'none';
+
+    const master = ctx.createGain();
+    master.gain.value = 0.95;
+
+    pre.connect(comp); comp.connect(shaper); shaper.connect(master);
+    master.connect(ctx.destination);
+    return { bus: pre, master };
+  },
+
   ensure() {
     if (!this.supported()) return null;
-    if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const chain = this.buildChain(this.ctx);
+      this.bus = chain.bus;
+      this.master = chain.master;
+    }
     if (this.ctx.state === 'suspended') this.ctx.resume();
     return this.ctx;
   },
@@ -2354,7 +2693,7 @@ const Alarm = {
     const o = this.ctx.createOscillator(), g = this.ctx.createGain();
     o.frequency.value = 440;
     g.gain.value = 0.0001;                       // inaudible, but counts as playing
-    o.connect(g); g.connect(this.ctx.destination);
+    o.connect(g); g.connect(this.ctx.destination);   // straight out, never through the limiter
     o.start();
     this.keep = o;
   },
@@ -2376,30 +2715,42 @@ const Alarm = {
     g.gain.linearRampToValueAtTime(vol, t + 0.015);
     if (decay) g.gain.exponentialRampToValueAtTime(0.0008, t + len);
     else { g.gain.setValueAtTime(vol, t + len - 0.05); g.gain.linearRampToValueAtTime(0, t + len); }
-    o.connect(g); g.connect(ctx.destination);
+    o.connect(g); g.connect(this.bus || ctx.destination);
     o.start(t); o.stop(t + len + 0.02);
     this.nodes.push(o);
   },
 
   /** Schedule `count` rings of the chosen sound, starting at audio-clock time `at`. */
   burst(at, count) {
-    const vol = clamp(S.settings.alarmVol == null ? 0.7 : S.settings.alarmVol, 0, 1);
+    const vol = clamp(S.settings.alarmVol == null ? 1 : S.settings.alarmVol, 0, 1);
     const sound = S.settings.alarmSound || 'beep';
     for (let i = 0; i < count; i++) {
-      const t = at + i * (sound === 'urgent' ? 0.42 : 0.75);
+      const t = at + i * (sound === 'urgent' || sound === 'siren' ? 0.42 : 0.75);
       if (sound === 'chime') {
         this.note(t, 0.3, 660, 660, vol * 0.85, 'triangle', true);
         this.note(t + 0.16, 0.3, 880, 880, vol * 0.85, 'triangle', true);
         this.note(t + 0.32, 0.5, 1175, 1175, vol * 0.8, 'triangle', true);
       } else if (sound === 'bell') {
         this.note(t, 1.1, 830, 830, vol, 'sine', true);
-        this.note(t, 1.1, 2075, 2075, vol * 0.3, 'sine', true);   // harmonic gives it the ring
+        this.note(t, 1.1, 2075, 2075, vol * 0.45, 'sine', true);   // harmonic gives it the ring
+      } else if (sound === 'siren') {
+        // the loudest option: a sweep in the 2-4kHz band the ear is most
+        // sensitive to, stacked with a detuned second voice so it cuts through
+        this.note(t, 0.38, 2200, 3400, vol * 0.8, 'sawtooth');
+        this.note(t, 0.38, 2207, 3411, vol * 0.45, 'square');
+        this.note(t + 0.4, 0.38, 3400, 2200, vol * 0.8, 'sawtooth');
+        this.note(t + 0.4, 0.38, 3391, 2193, vol * 0.45, 'square');
       } else if (sound === 'urgent') {
-        this.note(t, 0.13, 1200, 1200, vol, 'square');
-        this.note(t + 0.16, 0.13, 1600, 1600, vol, 'square');
+        this.note(t, 0.13, 1200, 1200, vol * 0.85, 'square');
+        this.note(t, 0.13, 2400, 2400, vol * 0.35, 'square');
+        this.note(t + 0.16, 0.13, 1600, 1600, vol * 0.85, 'square');
+        this.note(t + 0.16, 0.13, 3200, 3200, vol * 0.35, 'square');
       } else {
+        // plain beep, now with harmonics so it carries further
         this.note(t, 0.17, 950, 950, vol, 'sine');
+        this.note(t, 0.17, 1900, 1900, vol * 0.45, 'square');
         this.note(t + 0.18, 0.17, 700, 700, vol, 'sine');
+        this.note(t + 0.18, 0.17, 1400, 1400, vol * 0.45, 'square');
       }
     }
   },
@@ -2852,7 +3203,7 @@ function renderTrays() {
   }
   $('trayDueMsg').innerHTML = msg;
 
-  renderPain(); renderElastic(); renderIncidents();
+  renderPain(); renderElastic(); renderIncidents(); renderLinks(); renderPhotos();
 
   const hist = S.trayHistory.slice().sort((a, b) => b.startedAt - a.startedAt);
   $('trayHistory').innerHTML = hist.length ? hist.map(h => {
@@ -2967,7 +3318,15 @@ function renderAppts() {
 /* -- notes -- */
 const TAGS = { general: ['General', 'grey'], pain: ['Pain', 'red'], fit: ['Fit', 'amber'], question: ['Ask ortho', 'blue'], progress: ['Progress', ''] };
 function renderNotes() {
-  $('notesList').innerHTML = S.notes.length ? S.notes.map(n => {
+  const q = ($('noteSearch').value || '').trim().toLowerCase();
+  const list = q
+    ? S.notes.filter(n => n.text.toLowerCase().includes(q) ||
+        (TAGS[n.tag] || TAGS.general)[0].toLowerCase().includes(q) || ('tray ' + n.tray).includes(q))
+    : S.notes;
+  $('noteCount').textContent = q
+    ? `${list.length} of ${S.notes.length}`
+    : (S.notes.length ? S.notes.length + ' saved' : '');
+  $('notesList').innerHTML = list.length ? list.map(n => {
     const t = TAGS[n.tag] || TAGS.general;
     return `<div class="item">
       <div class="ico">📝</div>
@@ -2980,7 +3339,7 @@ function renderNotes() {
       </div>
       <button class="x" onclick="deleteNote('${n.id}')">✕</button>
     </div>`;
-  }).join('') : '<div class="empty"><span class="e">📝</span>No notes yet.</div>';
+  }).join('') : `<div class="empty"><span class="e">📝</span>${q ? 'Nothing matches “' + esc(q) + '”.' : 'No notes yet.'}</div>`;
 }
 
 /* -- stats -- */
@@ -3148,9 +3507,14 @@ function renderSettings() {
   $('togVib').classList.toggle('on', !!s.vibrate);
   $('togAlarm').classList.toggle('on', !!s.alarm);
   $('togWear').classList.toggle('on', !!s.wearAdjust);
-  set('setVol', s.alarmVol == null ? 0.7 : s.alarmVol);
+  set('setVol', s.alarmVol == null ? 1 : s.alarmVol);
   set('setSound', s.alarmSound || 'beep');
   set('setTheme', s.theme || 'dark');
+  // be straight about the one thing the web version cannot do
+  $('silentNote').innerHTML = Native.on
+    ? 'Plays through the media channel, so it is heard even with the ring/silent switch on silent. Turn the volume up with the side buttons while it rings.'
+    : 'On iPhone the <b>ring/silent switch mutes this</b> — a website cannot override it. ' +
+      'The installed app from the App Store build can, or set a phone alarm with the 📅 button as backup.';
 
   const base = location.origin + location.pathname;
   $('siriLinks').innerHTML = [
