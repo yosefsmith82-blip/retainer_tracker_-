@@ -90,6 +90,31 @@ Tap any out-session on the Today screen to correct when it came out, when it wen
 or what the allowance was — for when you press the button late, or forget entirely. When
 starting one, the sheet also offers **just now / 5 / 10 / 20 min ago** to backdate it.
 
+### Report for your orthodontist
+Stats → **Report for my orthodontist**. One page: compliance against your goal over the last
+30 tracked days, average and best/lowest day, how many breaks ran over, current tray and
+elastics, any lost or broken trays, and the notes you tagged *Ask my ortho*. Share it, print
+it to PDF, or export everything as a CSV spreadsheet (every tracked day, plus every break
+with its times and allowance).
+
+### When you forget to press the button
+If a break has been running for more than three hours, the app asks about it on the way in —
+still out, went back in at a particular time, or never came out at all. One forgotten tap
+otherwise drags a whole day's figures down.
+
+### While the tray is out
+**+5 / +15 / +30 min** extend the allowance when a meal runs long, and move the alarm with
+it, rather than leaving you sitting over the limit.
+
+### Today's forecast
+Under today's wear: whether the goal is still reachable, how much slack is left, or — once
+it cannot be met — the most the day can still add up to. The ring turns amber only when the
+goal is genuinely out of reach, not merely because the morning is young.
+
+### Milestones
+A quarter, halfway, three quarters, every tenth tray and the final one get marked when you
+advance. The Trays screen also shows the whole course as a strip, one segment per tray.
+
 ### Trays
 - Which tray you're on, out of how many, and how far through the whole set you are.
 - Day *n* of *N* on the current tray, and the exact date/time the next one is due.
