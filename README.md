@@ -154,6 +154,21 @@ and anything that isn't a real address is refused.
 Advancing a tray brings up the things that are easy to forget on swap day: seat the new one,
 chewies, keep the old tray, take a photo, elastics back on.
 
+### Retainer mode
+Settings → **Stage of treatment**. When active treatment ends and you move to retainers worn
+overnight, this switches the whole app over: the goal becomes hours per night rather than
+22 hours a day, Today shows tonight's progress, the stats count nights, and an evening
+reminder nudges you if it isn't in by your chosen time.
+
+The awkward part is that a night crosses midnight. Counted by calendar day, 22:00–07:00
+would split into two useless halves. So wear is counted in a **night window** — 18:00 to
+12:00 by default, both adjustable — and labelled by the evening it began, which makes
+22:00–07:00 read as a single nine-hour night.
+
+Nothing else changes: the session model is the same, the retainer is simply out for most of
+the day instead of in. Tray history is kept untouched, and switching back restores
+everything exactly as it was.
+
 ### Refinement sets
 Treatment rarely ends with the first batch. Trays → **New set** files the set you are
 finishing — with its own tray count and dates — and starts numbering at 1 again, so the

@@ -539,11 +539,11 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 
   <div id="actionIn">
-    <button class="btn warn" onclick="openOutSheet()">Take tray out</button>
+    <button class="btn warn" id="outBtn" onclick="openOutSheet()">Take tray out</button>
     <div class="quickrow" id="quickOut"></div>
   </div>
   <div id="actionOut" class="hidden">
-    <button class="btn primary" onclick="putBackIn()">Put tray back in ✓</button>
+    <button class="btn primary" id="inBtn" onclick="putBackIn()">Put tray back in ✓</button>
     <div class="btnrow" style="margin-top:9px">
       <button class="btn sm" onclick="extendOut(5)">+5 min</button>
       <button class="btn sm" onclick="extendOut(15)">+15 min</button>
@@ -571,7 +571,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 
   <div class="card" style="margin-top:14px">
-    <h2>Today's wear</h2>
+    <h2 id="wearHead">Today's wear</h2>
     <div class="row" style="margin-bottom:9px">
       <div class="bigtime mono" style="font-size:34px" id="dayWear">0:00</div>
       <div class="center">
@@ -810,6 +810,36 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
 <!-- ============ SETTINGS ============ -->
 <section class="view" id="v-settings">
+  <div class="card">
+    <h2>Stage of treatment</h2>
+    <div class="switch">
+      <div><div class="lbl">Retainer mode</div>
+        <div class="desc">Treatment finished — worn overnight instead of all day</div></div>
+      <div class="tog" id="togRetainer" onclick="toggleRetainer()"></div>
+    </div>
+    <div id="retainerOpts" class="hidden" style="margin-top:14px">
+      <div class="grid2">
+        <label class="f"><span>Hours per night</span>
+          <input type="number" id="setNightGoal" min="1" max="24" step="0.5" inputmode="decimal"></label>
+        <label class="f"><span>Remind me at</span><input type="time" id="setRemindAt"></label>
+      </div>
+      <div class="grid2">
+        <label class="f"><span>Night starts</span>
+          <select id="setNightStart">
+            <option value="16">16:00</option><option value="17">17:00</option><option value="18">18:00</option>
+            <option value="19">19:00</option><option value="20">20:00</option><option value="21">21:00</option>
+          </select></label>
+        <label class="f"><span>Night ends</span>
+          <select id="setNightEnd">
+            <option value="9">09:00</option><option value="10">10:00</option><option value="11">11:00</option>
+            <option value="12">12:00</option><option value="13">13:00</option><option value="14">14:00</option>
+          </select></label>
+      </div>
+      <div class="tiny faint">A night is counted between those hours, so wear either side of midnight
+        adds up as one night rather than being split across two days.</div>
+    </div>
+  </div>
+
   <div class="card">
     <h2>Appearance</h2>
     <label class="f" style="margin:0"><span>Theme</span>
@@ -1290,6 +1320,18 @@ const DEFAULTS = () => ({
   // `phases` with their own totals.
   phase: { name: 'Initial set', startedAt: Date.now() },
   phases: [],
+  // When active treatment ends you move to retainers, worn overnight rather
+  // than all day. Same session model — the retainer is simply out for most of
+  // the day — but the accounting runs on nights, not calendar days.
+  mode: 'aligners',          // 'aligners' | 'retainer'
+  retainer: {
+    startedAt: null,
+    goalHours: 10,           // per night
+    nightStartHour: 18,      // a night runs 18:00 -> 12:00 the next day
+    nightEndHour: 12,
+    remindAt: '22:00',
+    lastRemind: 0
+  },
   tray: { number: 1, startedAt: Date.now(), notified: false },
   trayHistory: [],
   sessions: [],
@@ -1354,6 +1396,8 @@ function load() {
     if (!Array.isArray(merged.links)) merged.links = [];
     if (!Array.isArray(merged.stock)) merged.stock = [];
     if (!Array.isArray(merged.phases)) merged.phases = [];
+    if (merged.mode !== 'retainer') merged.mode = 'aligners';
+    merged.retainer = Object.assign(base.retainer, d.retainer || {});
     if (!merged.phase || !merged.phase.name) {
       merged.phase = {
         name: 'Initial set',
@@ -1467,6 +1511,36 @@ function toLocalInput(t) {
 
 /* --------------------------- core wear math --------------------------- */
 const openSession = () => S.sessions.find(s => !s.in) || null;
+/* --------------------------- retainer nights -------------------------- */
+/* A night straddles midnight, so calendar days are the wrong bucket: 22:00 to
+   07:00 would be split in two and neither half would look like a night's wear.
+   Everything here works on a night window instead, labelled by the evening it
+   began. The session model is untouched — the retainer is simply out for most
+   of the day, and wear is still window minus out-time. */
+
+const inRetainer = () => S.mode === 'retainer';
+const nightGoalMs = () => (S.retainer.goalHours || 10) * HOUR;
+const nightLengthMs = () =>
+  ((24 - S.retainer.nightStartHour) + S.retainer.nightEndHour) * HOUR;
+
+/** The evening that the given instant belongs to (or tonight's, during the day). */
+function nightStartFor(t) {
+  const h = new Date(t).getHours(), base = dayStart(t);
+  const startMs = base + S.retainer.nightStartHour * HOUR;
+  if (h < S.retainer.nightEndHour) return startMs - DAY;   // small hours: last night
+  return startMs;                                          // evening, or tonight to come
+}
+
+/** Wear and out-time inside one night window. */
+function nightStats(nightStart) {
+  const now = Date.now();
+  const from = Math.max(nightStart, trackingStart());
+  const to = Math.min(nightStart + nightLengthMs(), now);
+  if (to <= from) return { wear: 0, out: 0, elapsed: 0, tracked: false, future: nightStart > now };
+  const out = outMsBetween(from, to);
+  return { wear: Math.max(0, (to - from) - out), out, elapsed: to - from, tracked: true, future: false };
+}
+
 const goalMs = () => S.settings.goalHours * HOUR;
 /** Earliest moment we could actually have measured anything.
     Deliberately NOT the treatment start: backfilled trays and hand-edited tray
@@ -3236,6 +3310,19 @@ if (window.matchMedia) {
 }
 
 function pickSound(v) { S.settings.alarmSound = v; save(); Alarm.test(); }
+function toggleRetainer() {
+  if (!inRetainer()) {
+    if (!confirm('Switch to retainer mode?\n\nTray tracking pauses and wear is counted per night ' +
+      'instead of per day. Your history stays exactly as it is, and you can switch back.')) return;
+    S.mode = 'retainer';
+    S.retainer.startedAt = S.retainer.startedAt || Date.now();
+  } else {
+    S.mode = 'aligners';
+  }
+  save(); render();
+  toast(inRetainer() ? 'Retainer mode — nights only' : 'Back to aligner tracking');
+}
+
 function toggleWearAdjust() {
   S.settings.wearAdjust = !S.settings.wearAdjust;
   S.tray.notified = false;                 // the due date moved, so let it warn again
@@ -3307,6 +3394,18 @@ function checkReminders() {
         `${dur(now - s.out)} out of your mouth — ${dur(now - due)} past your allowance.`, s.id);
     }
   }
+  // retainer: nudge in the evening if it is not in yet
+  if (inRetainer() && S.settings.notify) {
+    const [rh, rm] = (S.retainer.remindAt || '22:00').split(':').map(Number);
+    const due = dayStart(now) + rh * HOUR + (rm || 0) * MIN;
+    const already = S.retainer.lastRemind && dayStart(S.retainer.lastRemind) === dayStart(now);
+    if (now >= due && now < due + 3 * HOUR && !already && openSession()) {
+      if (notify('🌙 Retainer time', 'Pop it in — tonight\'s goal is ' + S.retainer.goalHours + ' hours.', 'retainer')) {
+        S.retainer.lastRemind = now; save();
+      }
+    }
+  }
+
   // supplies that need ordering, with shipping time allowed for
   for (const it of S.stock) {
     const reorder = stockReorderAt(it);
@@ -3371,6 +3470,105 @@ function render() {
   if (currentView === 'settings') renderSettings();
 }
 
+/* Today, once treatment is over and it's nights only. The ring tracks tonight
+   against the nightly goal rather than a 22-hour day. */
+function renderRetainerToday(now, s, hero) {
+  const nightStart = nightStartFor(now);
+  const st = nightStats(nightStart);
+  const goal = nightGoalMs();
+  const pct = clamp(st.wear / goal * 100, 0, 100);
+  const inWindow = now >= nightStart && now < nightStart + nightLengthMs();
+
+  if (s) {                                        // retainer is out
+    hero.className = 'card hero out';
+    $('heroState').textContent = 'Retainer out';
+    $('heroTime').textContent = clockDur(now - s.out, true);
+    $('heroCap').textContent = inWindow ? 'out during the night' : 'out today';
+    $('heroSub').textContent = inWindow
+      ? 'This is counting against tonight'
+      : 'Normal during the day — put it in this evening';
+    setRing(pct, inWindow ? 'red' : 'amber');
+  } else {
+    hero.className = 'card hero in';
+    $('heroState').textContent = 'Retainer in';
+    const lastIn = S.sessions.length ? Math.max(...S.sessions.map(x => x.in || 0)) : 0;
+    $('heroTime').textContent = clockDur(lastIn ? now - lastIn : now - nightStart, true);
+    $('heroCap').textContent = Math.round(pct) + '% of tonight';
+    $('heroSub').textContent = lastIn ? 'In since ' + timeStr(lastIn) : 'Wearing it';
+    setRing(pct, pct >= 100 ? '' : '');
+  }
+  $('heroBarL').textContent = 'Tonight ' + dur(st.wear, { zero: '0m' }) + ' of ' + S.retainer.goalHours + 'h';
+  $('heroBarR').textContent = st.wear >= goal ? 'goal met' : dur(goal - st.wear) + ' to go';
+  $('actionIn').classList.toggle('hidden', !!s);
+  $('actionOut').classList.toggle('hidden', !s);
+  if (s) {
+    const due = sessionDue(s);
+    $('alarmCard').classList.toggle('armed', Alarm.armedFor === due);
+    $('alarmState').textContent = '🌙 Retainer reminder at ' + S.retainer.remindAt;
+    $('alarmHint').textContent = 'You will be nudged if it is not in by then';
+  }
+
+  // tonight's card, in place of the daily one
+  $('dayWear').textContent = clockDur(st.wear, true);
+  $('dayPct').textContent = Math.round(pct) + '%';
+  $('dayGoalLbl').textContent = S.retainer.goalHours + 'h';
+  const db = $('dayBar');
+  db.style.width = pct + '%';
+  db.className = st.wear >= goal ? '' : 'amber';
+  $('dayOutLbl').textContent = st.tracked
+    ? 'Out ' + dur(st.out, { zero: '0m' }) + ' during the night'
+    : 'Tonight starts at ' + S.retainer.nightStartHour + ':00';
+  $('dayLeftLbl').textContent = '';
+  const fc = $('forecast');
+  const last14 = retainerNights(14);
+  const hit = last14.filter(n => n.wear >= goal).length;
+  fc.className = 'forecast' + (st.wear >= goal ? ' good' : '');
+  fc.innerHTML = st.wear >= goal
+    ? `✓ Tonight's goal met — ${clockDur(st.wear)} worn`
+    : last14.length
+      ? `${hit} of the last ${last14.length} nights at goal`
+      : 'Wear it overnight and this fills in';
+
+  $('milestone').classList.add('hidden');
+  $('miniTray').textContent = S.tray.number;
+  $('miniDay').textContent = trayDayNum();
+  $('miniDays').textContent = S.settings.daysPerTray;
+  $('miniDue').textContent = 'Retainer since ' +
+    (S.retainer.startedAt ? dateStr(S.retainer.startedAt) : 'recently');
+  renderTodaySessions(now);
+}
+
+/** The last N completed nights, newest last. */
+function retainerNights(n) {
+  const out = [];
+  const tonight = nightStartFor(Date.now());
+  for (let i = n; i >= 1; i--) {
+    const st = nightStats(tonight - i * DAY);
+    if (st.tracked) out.push(Object.assign({ at: tonight - i * DAY }, st));
+  }
+  return out;
+}
+
+/** Today's out-sessions, shared by both modes. */
+function renderTodaySessions(now) {
+  const today = S.sessions.filter(x => (x.in || now) >= dayStart(now)).sort((a, b) => b.out - a.out);
+  $('todaySessions').innerHTML = today.length ? today.map(x => {
+    const actual = (x.in || now) - x.out, over = actual - x.rec * MIN;
+    const tag = !x.in ? '<span class="tag amber">out now</span>'
+      : over > MIN ? `<span class="tag red">+${dur(over)}</span>`
+      : `<span class="tag">on target</span>`;
+    return `<div class="item">
+      <div class="ico">${x.emoji}</div>
+      <div class="body" onclick="openSessEdit('${x.id}')">
+        <div class="t">${esc(x.label)} · ${dur(actual, { zero: '<1m' })} ${tag}</div>
+        <div class="s">${timeStr(x.out)} → ${x.in ? timeStr(x.in) : 'now'} · allowance ${x.rec}m</div>
+      </div>
+      <button class="x" onclick="openSessEdit('${x.id}')">✎</button>
+    </div>`;
+  }).join('') : `<div class="empty"><span class="e">✨</span>${
+    inRetainer() ? 'Nothing logged today.' : "Tray hasn't come out yet today."}</div>`;
+}
+
 /* -- today -- */
 const RING_C = 2 * Math.PI * 88;    // circumference of the r=88 progress circle
 function setRing(pct, cls) {
@@ -3382,10 +3580,17 @@ function setRing(pct, cls) {
 
 function renderToday() {
   renderQuick();
+  // the thing in your mouth is a tray during treatment and a retainer after it
+  const noun = inRetainer() ? 'retainer' : 'tray';
+  $('outBtn').textContent = 'Take ' + noun + ' out';
+  $('inBtn').textContent = 'Put ' + noun + ' back in ✓';
+  $('wearHead').textContent = inRetainer() ? 'Tonight' : "Today's wear";
   const now = Date.now(), s = openSession(), hero = $('hero');
   const banner = $('permBanner');
   banner.classList.toggle('hidden',
     !notifySupported() || Notification.permission === 'granted' || Notification.permission === 'denied');
+
+  if (inRetainer()) { renderRetainerToday(now, s, hero); return; }
 
   if (s) {
     const outFor = now - s.out, due = sessionDue(s), left = due - now, over = left < 0;
@@ -3489,22 +3694,7 @@ function renderToday() {
     $('msIcon').textContent = ms.icon; $('msTitle').textContent = ms.title; $('msBody').textContent = ms.body;
   }
 
-  // sessions today
-  const today = S.sessions.filter(x => (x.in || now) >= dayStart(now)).sort((a, b) => b.out - a.out);
-  $('todaySessions').innerHTML = today.length ? today.map(x => {
-    const actual = (x.in || now) - x.out, over = actual - x.rec * MIN;
-    const tag = !x.in ? '<span class="tag amber">out now</span>'
-      : over > MIN ? `<span class="tag red">+${dur(over)}</span>`
-      : `<span class="tag">on target</span>`;
-    return `<div class="item">
-      <div class="ico">${x.emoji}</div>
-      <div class="body" onclick="openSessEdit('${x.id}')">
-        <div class="t">${esc(x.label)} · ${dur(actual, { zero: '<1m' })} ${tag}</div>
-        <div class="s">${timeStr(x.out)} → ${x.in ? timeStr(x.in) : 'now'} · allowance ${x.rec}m</div>
-      </div>
-      <button class="x" onclick="openSessEdit('${x.id}')">✎</button>
-    </div>`;
-  }).join('') : '<div class="empty"><span class="e">✨</span>Tray hasn\'t come out yet today.</div>';
+  renderTodaySessions(now);
 
   // mini tray strip
   $('miniTray').textContent = S.tray.number;
@@ -3714,6 +3904,7 @@ function renderNotes() {
 
 /* -- stats -- */
 function renderStats() {
+  if (inRetainer()) return renderRetainerStats();
   const now = Date.now(), goal = goalMs(), today = dayStart(now);
   const days = [];
   for (let i = 13; i >= 0; i--) {
@@ -3792,6 +3983,44 @@ function renderStats() {
       <span class="tag ${d2 > MIN ? 'red' : ''}">${d2 >= 0 ? '+' : '−'}${dur(Math.abs(d2), { zero: '0m' })}</span>
     </div>`;
   }).join('') : '<div class="empty small">Nothing logged in the last 7 days.</div>';
+}
+
+/** Stats, counted in nights. */
+function renderRetainerStats() {
+  const goal = nightGoalMs();
+  const nights = retainerNights(14);
+  const max = Math.max(goal, ...nights.map(n => n.wear), 1);
+  $('chart').innerHTML = `<div class="goalline" style="bottom:${goal / max * 100}%"></div>` +
+    (nights.length ? nights.map(n => {
+      const hit = n.wear >= goal;
+      return `<div class="col" title="${dur(n.wear)}">
+        <div class="b ${hit ? '' : 'miss'}" style="height:${Math.max(2, n.wear / max * 100)}%"></div>
+        <div class="lb">${new Date(n.at).toLocaleDateString([], { weekday: 'narrow' })}</div>
+      </div>`;
+    }).join('') : '<div class="empty small">No full nights yet.</div>');
+  $('chartGoal').textContent = S.retainer.goalHours + 'h';
+  const avg = nights.length ? nights.reduce((a, n) => a + n.wear, 0) / nights.length : 0;
+  $('chartAvg').textContent = nights.length ? 'Avg ' + clockDur(avg) + '/night' : '';
+
+  const hit = nights.filter(n => n.wear >= goal).length;
+  let streak = 0;
+  for (let i = nights.length - 1; i >= 0; i--) { if (nights[i].wear >= goal) streak++; else break; }
+  $('stAvg7').textContent = nights.length ? clockDur(avg) : '—';
+  $('stStreak').textContent = streak + (streak === 1 ? ' night' : ' nights');
+  $('stBest').textContent = nights.length ? clockDur(Math.max(...nights.map(n => n.wear))) : '—';
+  $('stHit').textContent = nights.length ? Math.round(hit / nights.length * 100) + '%' : '0%';
+
+  const since = S.retainer.startedAt;
+  $('weekly').innerHTML = `<div class="stats">
+      <div class="stat"><div class="v mono">${hit}<span class="faint" style="font-size:15px">/${nights.length}</span></div>
+        <div class="k">Nights at goal</div></div>
+      <div class="stat"><div class="v mono">${since ? Math.floor((Date.now() - since) / DAY) : 0}</div>
+        <div class="k">Days in retainers</div></div>
+    </div>
+    <div class="small faint" style="margin-top:12px">Counted between ${S.retainer.nightStartHour}:00 and
+      ${S.retainer.nightEndHour}:00, so a night either side of midnight adds up as one.</div>`;
+  renderHours(); renderPainChart();
+  $('reasonBreak').innerHTML = '<div class="empty small">Not tracked in retainer mode.</div>';
 }
 
 /** Wear over the last 7 full days against the 7 before that. */
@@ -3877,6 +4106,12 @@ function renderSettings() {
   $('togVib').classList.toggle('on', !!s.vibrate);
   $('togAlarm').classList.toggle('on', !!s.alarm);
   $('togWear').classList.toggle('on', !!s.wearAdjust);
+  $('togRetainer').classList.toggle('on', inRetainer());
+  $('retainerOpts').classList.toggle('hidden', !inRetainer());
+  set('setNightGoal', S.retainer.goalHours);
+  set('setRemindAt', S.retainer.remindAt || '22:00');
+  set('setNightStart', String(S.retainer.nightStartHour));
+  set('setNightEnd', String(S.retainer.nightEndHour));
   set('setVol', s.alarmVol == null ? 1 : s.alarmVol);
   set('setSound', s.alarmSound || 'beep');
   set('setTheme', s.theme || 'dark');
@@ -3956,6 +4191,20 @@ function bindSettings() {
   };
   num('setTotal', 'totalTrays', 1, 200); num('setDays', 'daysPerTray', 1, 60);
   num('setGoal', 'goalHours', 1, 24, true); num('setNag', 'nagMins', 1, 60); num('setEarly', 'earlyMins', 0, 30);
+  const retNum = (id, key, min, max, float) => $(id).addEventListener('change', () => {
+    let v = float ? parseFloat($(id).value) : parseInt($(id).value, 10);
+    if (isNaN(v)) { renderSettings(); return; }
+    S.retainer[key] = clamp(v, min, max);
+    save(); render(); toast('Saved');
+  });
+  retNum('setNightGoal', 'goalHours', 1, 24, true);
+  retNum('setNightStart', 'nightStartHour', 12, 23);
+  retNum('setNightEnd', 'nightEndHour', 1, 16);
+  $('setRemindAt').addEventListener('change', () => {
+    S.retainer.remindAt = $('setRemindAt').value || '22:00';
+    S.retainer.lastRemind = 0;
+    save(); render(); toast('Reminder at ' + S.retainer.remindAt);
+  });
   $('setVol').addEventListener('change', () => {
     S.settings.alarmVol = parseFloat($('setVol').value);
     save(); Alarm.test();
