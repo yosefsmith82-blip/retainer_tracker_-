@@ -154,6 +154,21 @@ and anything that isn't a real address is refused.
 Advancing a tray brings up the things that are easy to forget on swap day: seat the new one,
 chewies, keep the old tray, take a photo, elastics back on.
 
+### Refinement sets
+Treatment rarely ends with the first batch. Trays → **New set** files the set you are
+finishing — with its own tray count and dates — and starts numbering at 1 again, so the
+history stays readable instead of two overlapping runs of "tray 3". Finished trays keep the
+set they belonged to, and progress, the journey strip and milestones all follow the set you
+are on now.
+
+### Quick breaks
+The two reasons you actually use most sit under the main button on Today, so the common case
+is one tap instead of three. The list re-ranks itself from your own history.
+
+### When you take it out
+Stats → **When you take it out**: out-time spread across the 24 hours of the day over the
+last fortnight, with the worst hour named. Usually it is dinner.
+
 ### Trays
 - Which tray you're on, out of how many, and how far through the whole set you are.
 - Day *n* of *N* on the current tray, and the exact date/time the next one is due.

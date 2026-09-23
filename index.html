@@ -455,6 +455,21 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .check b{display:block;font-size:14.5px;font-weight:650}
 .check .tiny{display:block;margin-top:1px}
 
+/* ---------- quick out, phases, hours, nudge ---------- */
+.quickrow{display:flex;gap:9px;margin-top:9px}
+.quick{flex:1;display:flex;align-items:center;justify-content:center;gap:7px}
+.quick .qe{font-size:16px}
+.quick .qm{color:var(--faint);font-weight:650;font-size:12px}
+.phasename{font-size:15px;font-weight:750;letter-spacing:-.01em;color:var(--mint)}
+.hours{display:flex;align-items:flex-end;gap:2px;height:96px}
+.hcol{flex:1;height:100%;display:flex;align-items:flex-end}
+.hbar{width:100%;border-radius:3px;background:linear-gradient(180deg,#6ff0b4,var(--mint-d));opacity:.75}
+.hbar.peak{background:linear-gradient(180deg,var(--amber),#c9821f);opacity:1}
+.nudge{display:flex;gap:10px;align-items:flex-start;font-size:12.5px;color:var(--dim);
+  background:var(--surf);border:1px solid var(--hair2);border-radius:13px;padding:11px 13px;margin-bottom:12px}
+.nudge.warn{background:rgba(251,191,63,.1);border-color:rgba(251,191,63,.35);color:var(--text)}
+.nudge .e{font-size:15px;flex:none}
+
 /* ---------- supply stock ---------- */
 .stock{background:var(--surf);border:1px solid var(--hair2);border-radius:15px;padding:14px;margin-bottom:12px}
 .stock.due{border-color:rgba(251,191,63,.45);background:rgba(251,191,63,.08)}
@@ -525,6 +540,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
   <div id="actionIn">
     <button class="btn warn" onclick="openOutSheet()">Take tray out</button>
+    <div class="quickrow" id="quickOut"></div>
   </div>
   <div id="actionOut" class="hidden">
     <button class="btn primary" onclick="putBackIn()">Put tray back in ✓</button>
@@ -590,6 +606,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <!-- ============ TRAYS ============ -->
 <section class="view" id="v-trays">
   <div class="card">
+    <div class="row" style="margin-bottom:12px">
+      <div style="min-width:0">
+        <div class="phasename" id="phaseName">Initial set</div>
+        <div class="tiny faint" id="phaseMeta"></div>
+      </div>
+      <button class="btn sm" style="width:auto;padding:8px 13px;flex:none" onclick="openPhase()">New set</button>
+    </div>
     <div class="row" style="align-items:flex-start">
       <div>
         <div class="tiny faint" style="text-transform:uppercase;letter-spacing:.07em;font-weight:700">Current tray</div>
@@ -672,6 +695,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <h2 style="margin:0">Tray history</h2>
       <span class="tiny faint">tap to edit</span>
     </div>
+    <div id="phaseList"></div>
     <div id="trayHistory"></div>
     <div class="btnrow" style="margin-top:13px">
       <button class="btn sm" onclick="openBackfill()">⏪ Add past trays</button>
@@ -769,6 +793,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <div class="card">
     <h2>This week vs last</h2>
     <div id="weekly"></div>
+  </div>
+  <div class="card">
+    <h2>When you take it out</h2>
+    <div id="hourChart"></div>
   </div>
   <div class="card">
     <h2>Comfort over time</h2>
@@ -871,6 +899,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <div class="card">
     <h2>Your data</h2>
     <div class="small faint" style="margin-bottom:12px">Everything is stored on this device only — nothing is uploaded anywhere. Back it up now and then.</div>
+    <div class="nudge" id="backupNudge"></div>
     <div class="btnrow">
       <button class="btn sm" onclick="exportData()">Export backup</button>
       <button class="btn sm" onclick="document.getElementById('importFile').click()">Import backup</button>
@@ -1077,6 +1106,24 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 </div>
 
+<div class="sheet" id="sheetPhase">
+  <div class="scrim" onclick="closeSheet('sheetPhase')"></div>
+  <div class="panel">
+    <div class="grab"></div>
+    <h2>Start a new set</h2>
+    <p class="small faint" style="margin:0 0 14px">For refinements, or a second batch of trays.
+      Numbering starts at 1 again and everything you have done so far is kept under the set it belonged to.</p>
+    <label class="f"><span>Name</span><input id="phName" placeholder="Refinement 1"></label>
+    <div class="grid2">
+      <label class="f"><span>Trays in this set</span><input type="number" id="phTotal" min="1" max="200" inputmode="numeric"></label>
+      <label class="f"><span>Days per tray</span><input type="number" id="phDays" min="1" max="60" inputmode="numeric"></label>
+    </div>
+    <label class="f"><span>Starting</span><input type="datetime-local" id="phWhen"></label>
+    <button class="btn primary" onclick="savePhase()">Start it</button>
+    <button class="btn ghost sm" style="margin-top:9px" onclick="closeSheet('sheetPhase')">Cancel</button>
+  </div>
+</div>
+
 <div class="sheet" id="sheetStock">
   <div class="scrim" onclick="closeSheet('sheetStock')"></div>
   <div class="panel">
@@ -1237,6 +1284,12 @@ const DEFAULTS = () => ({
     ]
   },
   trackingSince: Date.now(),   // when this app started measuring; backfill never moves it
+  // Treatment usually runs in more than one set: the first batch, then
+  // refinements. settings.totalTrays/daysPerTray always describe the set you are
+  // on now, so every existing calculation keeps working; finished sets move to
+  // `phases` with their own totals.
+  phase: { name: 'Initial set', startedAt: Date.now() },
+  phases: [],
   tray: { number: 1, startedAt: Date.now(), notified: false },
   trayHistory: [],
   sessions: [],
@@ -1300,6 +1353,15 @@ function load() {
     if (!Array.isArray(merged.photos)) merged.photos = [];
     if (!Array.isArray(merged.links)) merged.links = [];
     if (!Array.isArray(merged.stock)) merged.stock = [];
+    if (!Array.isArray(merged.phases)) merged.phases = [];
+    if (!merged.phase || !merged.phase.name) {
+      merged.phase = {
+        name: 'Initial set',
+        startedAt: merged.trayHistory.length
+          ? Math.min(...merged.trayHistory.map(h => h.startedAt))
+          : merged.tray.startedAt
+      };
+    }
     if (seedLinks(merged)) {
       try { localStorage.setItem(KEY, JSON.stringify(merged)); } catch (e) {}
     }
@@ -1690,13 +1752,70 @@ function openChecklist() {
   openSheet('sheetChecklist');
 }
 
+/* ------------------------ refinement sets ----------------------------- */
+/* Almost nobody finishes in one batch: the first set is followed by
+   refinements, numbered from 1 again. Starting a new set files the old one
+   away with its totals intact, so the history stays readable instead of
+   turning into two overlapping runs of "tray 3". */
+
+function openPhase() {
+  const n = S.phases.length + 1;
+  $('phName').value = 'Refinement ' + n;
+  $('phTotal').value = 10;
+  $('phDays').value = S.settings.daysPerTray;
+  $('phWhen').value = toLocalInput(Date.now());
+  openSheet('sheetPhase');
+}
+
+function savePhase() {
+  const name = $('phName').value.trim() || 'Refinement ' + (S.phases.length + 1);
+  const total = parseInt($('phTotal').value, 10);
+  const days = parseInt($('phDays').value, 10);
+  const when = $('phWhen').value ? new Date($('phWhen').value).getTime() : Date.now();
+  if (!total || total < 1) { toast('How many trays in the new set?'); return; }
+  if (!days || days < 1) { toast('How many days per tray?'); return; }
+  if (when > Date.now() + DAY) { toast("That start date is in the future"); return; }
+  if (!confirm(`Start "${name}" at tray 1 of ${total}?\n\n` +
+    `Your ${S.trayHistory.length} finished trays stay on record under "${S.phase.name}".`)) return;
+
+  // file the set that is ending, with the totals it actually had
+  S.phases.push({
+    id: uid(), name: S.phase.name, startedAt: S.phase.startedAt, endedAt: when,
+    totalTrays: S.settings.totalTrays, daysPerTray: S.settings.daysPerTray,
+    trays: S.trayHistory.filter(h => (h.phase || S.phase.name) === S.phase.name).length
+  });
+  S.phase = { name, startedAt: when };
+  S.settings.totalTrays = total;
+  S.settings.daysPerTray = days;
+  S.tray = { number: 1, startedAt: when, notified: false };
+  S.seenMilestone = null;
+  save(); closeSheet('sheetPhase'); render();
+  toast(name + ' — back to tray 1');
+  buzz([30, 60, 30]);
+}
+
+function renderPhase() {
+  $('phaseName').textContent = S.phase.name;
+  const done = S.phases.length;
+  $('phaseMeta').textContent = done
+    ? done + ' earlier set' + (done === 1 ? '' : 's') + ' finished'
+    : 'Started ' + dateStr(S.phase.startedAt);
+  const el = $('phaseList');
+  if (!el) return;
+  el.innerHTML = S.phases.length ? S.phases.slice().reverse().map(ph =>
+    `<div class="item"><div class="ico">📗</div><div class="body">
+       <div class="t">${esc(ph.name)}</div>
+       <div class="s">${ph.trays || 0} of ${ph.totalTrays} trays · ${dateStr(ph.startedAt)} → ${dateStr(ph.endedAt)}</div>
+     </div></div>`).join('') : '';
+}
+
 function nextTray() {
   const t = S.settings.totalTrays;
   if (S.tray.number >= t && !confirm(`Tray ${S.tray.number} is your last tray of ${t}. Go past it anyway?`)) return;
   const st = trayStats();
   S.trayHistory.push({
     id: uid(), number: S.tray.number, startedAt: S.tray.startedAt, endedAt: Date.now(),
-    wear: st.wear, out: st.out, estimated: st.partial
+    wear: st.wear, out: st.out, estimated: st.partial, phase: S.phase.name
   });
   S.trayHistory.sort((a, b) => a.startedAt - b.startedAt);
   S.tray = { number: S.tray.number + 1, startedAt: Date.now(), notified: false };
@@ -3262,6 +3381,7 @@ function setRing(pct, cls) {
 }
 
 function renderToday() {
+  renderQuick();
   const now = Date.now(), s = openSession(), hero = $('hero');
   const banner = $('permBanner');
   banner.classList.toggle('hidden',
@@ -3453,7 +3573,7 @@ function renderTrays() {
   }
   $('trayDueMsg').innerHTML = msg;
 
-  renderPain(); renderElastic(); renderIncidents(); renderLinks(); renderStock(); renderPhotos();
+  renderPhase(); renderPain(); renderElastic(); renderIncidents(); renderLinks(); renderStock(); renderPhotos();
 
   const hist = S.trayHistory.slice().sort((a, b) => b.startedAt - a.startedAt);
   $('trayHistory').innerHTML = hist.length ? hist.map(h => {
@@ -3651,7 +3771,7 @@ function renderStats() {
       ? `You've had the tray out <b>${dur(drift)} longer</b> than your own allowances over ${sess.length} sessions — about ${dur(drift / 7)} a day of extra out-time.`
       : `You're <b>${dur(-drift)} under</b> your allowances across ${sess.length} sessions. Well controlled.`;
 
-  renderWeekly(); renderPainChart();
+  renderWeekly(); renderHours(); renderPainChart();
 
   // by reason
   const byReason = {};
@@ -3789,6 +3909,7 @@ function renderSettings() {
           : 'Only available on the installed app, over https');
   });
 
+  renderBackupNudge();
   const snap = snapshotInfo();
   $('snapBox').innerHTML = snap
     ? `<div class="row snaprow">
@@ -3842,6 +3963,71 @@ function bindSettings() {
 }
 
 /* ---------------------------- data in/out ----------------------------- */
+/** The two reasons you actually use, so the common case is one tap not three. */
+function topReasons() {
+  const count = {};
+  S.sessions.slice(-120).forEach(s => { count[s.reason] = (count[s.reason] || 0) + 1; });
+  const ranked = S.settings.presets.slice().sort((a, b) => (count[b.id] || 0) - (count[a.id] || 0));
+  return ranked.slice(0, 2);
+}
+
+function renderQuick() {
+  const el = $('quickOut');
+  if (!el) return;
+  el.innerHTML = topReasons().map(p =>
+    `<button class="btn sm quick" onclick="startOut('${p.id}')">
+       <span class="qe">${p.emoji}</span>${esc(p.label)}<span class="qm">${p.mins}m</span>
+     </button>`).join('');
+}
+
+/** Where the out-time actually goes across the day. */
+function renderHours() {
+  const el = $('hourChart');
+  if (!el) return;
+  const since = Date.now() - 14 * DAY;
+  const buckets = new Array(24).fill(0);
+  S.sessions.forEach(s => {
+    if (!s.in || s.in < since) return;
+    // spread each session across the hours it actually covered
+    let t = Math.max(s.out, since);
+    while (t < s.in) {
+      const h = new Date(t).getHours();
+      const hourEnd = new Date(t).setMinutes(60, 0, 0);
+      const chunk = Math.min(s.in, hourEnd) - t;
+      buckets[h] += chunk;
+      t += chunk;
+    }
+  });
+  const max = Math.max(...buckets, 1);
+  if (!buckets.some(b => b > 0)) {
+    el.innerHTML = '<div class="empty small">No breaks logged in the last 14 days.</div>';
+    return;
+  }
+  const worst = buckets.indexOf(max);
+  el.innerHTML = `<div class="hours">${buckets.map((b, h) => `
+      <div class="hcol" title="${h}:00 — ${dur(b, { zero: '0m' })}">
+        <div class="hbar ${b === max ? 'peak' : ''}" style="height:${Math.max(2, b / max * 100)}%"></div>
+      </div>`).join('')}</div>
+    <div class="row tiny faint" style="margin-top:6px"><span>midnight</span><span>noon</span><span>midnight</span></div>
+    <div class="small faint" style="margin-top:10px">Most of your out-time falls around
+      <b>${worst}:00–${(worst + 1) % 24}:00</b> — ${dur(buckets[worst])} over the last 14 days.</div>`;
+}
+
+/** Local-only data is one wiped browser away from gone. */
+function renderBackupNudge() {
+  const el = $('backupNudge');
+  if (!el) return;
+  const last = S.lastBackupAt || 0;
+  const days = last ? Math.floor((Date.now() - last) / DAY) : null;
+  const stale = !last || days >= 30;
+  el.className = 'nudge' + (stale ? ' warn' : '');
+  el.innerHTML = stale
+    ? `<span class="e">💾</span><div>${last
+        ? `Last backup was ${days} days ago.`
+        : 'You have never exported a backup.'} Everything lives on this phone only.</div>`
+    : `<span class="e">✓</span><div>Backed up ${days === 0 ? 'today' : days + ' day' + (days === 1 ? '' : 's') + ' ago'}.</div>`;
+}
+
 function exportData() {
   const blob = new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
@@ -3849,6 +4035,7 @@ function exportData() {
   a.download = 'aligner-backup-' + new Date().toISOString().slice(0, 10) + '.json';
   document.body.appendChild(a); a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  S.lastBackupAt = Date.now(); save(); renderBackupNudge();
   toast('Backup downloaded');
 }
 function importData(ev) {
