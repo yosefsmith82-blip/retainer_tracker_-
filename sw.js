@@ -1,5 +1,5 @@
 /* Aligner Tracker service worker — offline shell + notification actions. */
-const CACHE = 'aligner-v1';
+const CACHE = 'aligner-v3';   // bumping this drops every older cached copy on activation
 const ASSETS = [
   './',
   './index.html',

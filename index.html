@@ -939,6 +939,17 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <button class="btn sm danger" style="margin-top:9px" onclick="resetAll()">Erase everything</button>
   </div>
 
+  <div class="card">
+    <h2>App version</h2>
+    <div class="row">
+      <div>
+        <div class="small" style="font-weight:650">Build <span id="buildLbl">—</span></div>
+        <div class="tiny faint">Stuck on an old version? This clears the offline copy.</div>
+      </div>
+      <button class="btn sm" style="width:auto;padding:9px 13px;flex:none" onclick="forceUpdate()">Update</button>
+    </div>
+  </div>
+
   <div class="card tight center tiny faint">
     Aligner Tracker · <span id="verLbl">v1</span><br>
     Not medical advice. Follow your orthodontist's instructions.
@@ -1285,6 +1296,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
    All state lives in localStorage. Nothing leaves the device.
    ========================================================================= */
 
+const BUILD = '2026-09-23c';          // shown in Settings, so "which version am I on?" is answerable
 const KEY = 'alignerTracker.v1';
 const SNAP_KEY = 'alignerTracker.snapshot';
 const MIN = 60000, HOUR = 3600000, DAY = 86400000;
@@ -4145,6 +4157,7 @@ function renderSettings() {
   });
 
   renderBackupNudge();
+  $('buildLbl').textContent = BUILD;
   const snap = snapshotInfo();
   $('snapBox').innerHTML = snap
     ? `<div class="row snaprow">
@@ -4308,6 +4321,24 @@ function resetAll() {
   if (!confirm('Erase all trays, sessions, notes and appointments? This cannot be undone.')) return;
   if (!confirm('Really erase everything?')) return;
   S = DEFAULTS(); save(); render(); toast('Everything erased');
+}
+
+/** The offline copy is what makes the app work with no signal, and also what
+    keeps serving an old version after an update. This throws it away. */
+async function forceUpdate() {
+  toast('Fetching the latest version…');
+  try {
+    if ('caches' in window) {
+      const names = await caches.keys();
+      await Promise.all(names.map(n => caches.delete(n)));
+    }
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r => r.unregister()));
+    }
+  } catch (e) { /* carry on and reload anyway */ }
+  // a changing query defeats any cache still holding the old page
+  location.replace(location.pathname + '?u=' + Date.now());
 }
 
 /* ------------------------------ install ------------------------------- */
